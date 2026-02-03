@@ -83,6 +83,27 @@ const newsData = [
         image: "https://images.unsplash.com/photo-1542601906990-24ccd08d7455?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
         summary: "Mountain Harvest cam kết giảm thiểu rác thải nhựa bằng việc sử dụng bao bì lá chuối và túi giấy tái chế.",
         date: "28/01/2026"
+    },
+    {
+        id: 4,
+        title: "Lễ Hội Trái Cây Miền Nhiệt Đới Sắp Diễn Ra",
+        image: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Cùng hòa mình vào không khí sôi động của lễ hội trái cây với hơn 50 loại đặc sản vùng miền quy tụ.",
+        date: "25/01/2026"
+    },
+    {
+        id: 5,
+        title: "Cách Làm Salad Cầu Vồng Tốt Cho Sức Khỏe",
+        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Công thức salad đơn giản, giàu vitamin với sự kết hợp của 7 loại rau củ quả nhiều màu sắc.",
+        date: "20/01/2026"
+    },
+    {
+        id: 6,
+        title: "Mountain Harvest Đạt Chứng Nhận Organic Quốc Tế",
+        image: "https://images.unsplash.com/photo-1621451537084-482c73073a0f?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Tự hào là đơn vị tiên phong áp dụng tiêu chuẩn canh tác hữu cơ chuẩn Châu Âu tại Việt Nam.",
+        date: "15/01/2026"
     }
 ];
 
