@@ -1568,10 +1568,16 @@
   <!-- Top Bar (Thông báo/Hotline) -->
   <div class="bg-brand-green text-white text-xs py-2 px-4 hidden md:block">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <span><i class="fas fa-truck mr-2"></i>Miễn phí vận chuyển cho đơn hàng từ 500k</span>
-      <div class="space-x-4">
-        <a href="#" class="hover:text-brand-light">Hotline: 1900 1234</a>
-        <a href="#" class="hover:text-brand-light">Hỗ trợ khách hàng</a>
+      <span data-i18n="topbar.freeShipping"><i class="fas fa-truck mr-2"></i>Free shipping for orders over 500k</span>
+      <div class="flex items-center space-x-4">
+        <a href="#" class="hover:text-brand-light" data-i18n="topbar.hotline">Hotline: 1900 1234</a>
+        <a href="#" class="hover:text-brand-light" data-i18n="topbar.support">Customer Support</a>
+        <!-- Language Switch -->
+        <div class="flex items-center gap-2 border-l border-white/30 pl-4">
+          <button onclick="changeLanguage('en')" id="lang-en" class="px-2 py-1 rounded hover:bg-white/20 transition font-medium">EN</button>
+          <span class="text-white/50">|</span>
+          <button onclick="changeLanguage('vi')" id="lang-vi" class="px-2 py-1 rounded hover:bg-white/20 transition">VI</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1598,19 +1604,19 @@
             </div>
             <input type="text"
               class="block w-full pl-10 pr-32 py-2.5 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm transition shadow-sm"
-              placeholder="Tìm sản phẩm (vd: Cà chua, Gạo, Nước giặt...)">
+              placeholder="Search products..." data-i18n-placeholder="search.placeholder">
 
             <!-- Quick Category Select inside Search -->
             <div class="absolute inset-y-0 right-0 flex items-center">
               <select
                 class="h-full py-0 pl-2 pr-8 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-r-md focus:ring-0 cursor-pointer hover:text-brand-green font-medium">
-                <option>Tất cả</option>
-                <option>Nông sản</option>
-                <option>Nhu yếu phẩm</option>
+                <option data-i18n="search.all">All</option>
+                <option data-i18n="search.agricultural">Agricultural Products</option>
+                <option data-i18n="search.essentials">Essentials</option>
               </select>
               <button
-                class="absolute right-1 top-1 bottom-1 bg-brand-green hover:bg-brand-darkGreen text-white px-4 rounded-full transition text-sm font-bold">
-                Tìm
+                class="absolute right-1 top-1 bottom-1 bg-brand-green hover:bg-brand-darkGreen text-white px-4 rounded-full transition text-sm font-bold" data-i18n="search.button">
+                Search
               </button>
             </div>
           </div>
@@ -1621,7 +1627,7 @@
           <!-- User Account -->
           <div class="hidden md:flex flex-col items-center cursor-pointer hover:text-brand-green">
             <i class="far fa-user text-xl"></i>
-            <span class="text-[10px] mt-1">Tài khoản</span>
+            <span class="text-[10px] mt-1" data-i18n="nav.account">Account</span>
           </div>
 
           <!-- Cart with Notification -->
@@ -1632,23 +1638,22 @@
                 <span id="cart-count"
                   class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-bounce hidden">0</span>
               </div>
-              <span class="text-[10px] mt-1 hidden md:block">Giỏ hàng</span>
+              <span class="text-[10px] mt-1 hidden md:block" data-i18n="nav.cart">Cart</span>
             </div>
 
             <!-- Mini Cart Preview (Hover) -->
             <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
               <div class="w-72 bg-white rounded-lg shadow-xl border border-gray-100 p-4">
-              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2">Giỏ hàng của bạn</h4>
+              <h4 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2" data-i18n="cart.title">Your Cart</h4>
               <div id="cart-items" class="space-y-3 mb-4 max-h-48 overflow-y-auto custom-scrollbar">
                 <!-- Items will be injected here by JS -->
-                <div class="text-center text-gray-500 py-4 text-sm">Đang tải...</div>
+                <div class="text-center text-gray-500 py-4 text-sm" data-i18n="cart.loading">Loading...</div>
               </div>
               <div class="flex justify-between text-sm font-bold mb-3 text-brand-green">
-                <span>Tổng cộng:</span>
+                <span data-i18n="cart.total">Total:</span>
                 <span id="cart-total">0đ</span>
               </div>
-              <button class="w-full bg-brand-brown text-white py-2 rounded text-sm hover:bg-gray-800 transition">Thanh
-                toán ngay</button>
+              <button class="w-full bg-brand-brown text-white py-2 rounded text-sm hover:bg-gray-800 transition" data-i18n="cart.checkout">Checkout Now</button>
               </div>
             </div>
           </div>
@@ -1663,29 +1668,29 @@
       <!-- Category Bar (Desktop) -->
       <div class="hidden md:flex justify-center space-x-8 py-2 border-t border-gray-100 text-sm font-medium">
         <a href="#fresh-food" class="hover:text-brand-green transition flex items-center"><i
-            class="fas fa-carrot mr-1"></i>Tươi sống</a>
+            class="fas fa-carrot mr-1"></i><span data-i18n="nav.fresh">Fresh</span></a>
         <a href="#dry-food" class="hover:text-brand-green transition flex items-center"><i
-            class="fas fa-wheat-awn mr-1"></i>Thực phẩm khô</a>
+            class="fas fa-wheat-awn mr-1"></i><span data-i18n="nav.dry">Dry Food</span></a>
         <a href="#beverage" class="hover:text-brand-green transition flex items-center"><i
-            class="fas fa-coffee mr-1"></i>Đồ uống</a>
+            class="fas fa-coffee mr-1"></i><span data-i18n="nav.beverage">Beverages</span></a>
         <div class="w-px h-4 bg-gray-300"></div>
         <a href="#home-line" class="hover:text-brand-brown transition flex items-center"><i
             class="fas fa-house-chimney mr-1"></i>Home Line</a>
         <a href="#dhp" class="hover:text-brand-brown transition flex items-center"><i
-            class="fas fa-spray-can-sparkles mr-1"></i>Hoá mỹ phẩm</a>
+            class="fas fa-spray-can-sparkles mr-1"></i><span data-i18n="nav.cosmetics">Cosmetics</span></a>
       </div>
     </div>
 
     <!-- Mobile Menu Panel -->
     <div id="mobile-menu" class="hidden md:hidden bg-white border-t p-4">
-      <input type="text" class="w-full border p-2 rounded mb-4" placeholder="Tìm kiếm...">
+      <input type="text" class="w-full border p-2 rounded mb-4" placeholder="Search..." data-i18n-placeholder="search.placeholder">
       <div class="space-y-2">
-        <a href="#" class="block font-bold text-brand-green">Nông sản</a>
+        <a href="#" class="block font-bold text-brand-green" data-i18n="search.agricultural">Agricultural Products</a>
         <div class="pl-4 space-y-1 text-sm text-gray-600">
-          <a href="#" class="block">Tươi sống</a>
-          <a href="#" class="block">Thực phẩm khô</a>
+          <a href="#" class="block" data-i18n="nav.fresh">Fresh</a>
+          <a href="#" class="block" data-i18n="nav.dry">Dry Food</a>
         </div>
-        <a href="#" class="block font-bold text-brand-brown mt-2">Nhu yếu phẩm</a>
+        <a href="#" class="block font-bold text-brand-brown mt-2" data-i18n="search.essentials">Essentials</a>
       </div>
     </div>
   </nav>
@@ -1700,13 +1705,12 @@
     </div>
     <div class="relative z-10 max-w-7xl mx-auto px-4 w-full">
       <div class="max-w-xl text-white">
-        <span class="bg-brand-orange text-white text-xs font-bold px-2 py-1 rounded uppercase mb-2 inline-block">Khuyến
-          mãi mùa hè</span>
-        <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight">Nông Sản Sạch <br> Cho Cuộc Sống Xanh</h1>
-        <p class="text-gray-200 mb-6 text-lg">Giảm giá đến 20% cho các đơn hàng Rau củ quả trong tuần này.</p>
+        <span class="bg-brand-orange text-white text-xs font-bold px-2 py-1 rounded uppercase mb-2 inline-block" data-i18n="hero.promo">Summer Sale</span>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight" data-i18n="hero.title">Fresh Produce <br> For Green Living</h1>
+        <p class="text-gray-200 mb-6 text-lg" data-i18n="hero.subtitle">Up to 20% off on vegetables and fruits this week.</p>
         <a href="#shop"
           class="bg-brand-green hover:bg-brand-light text-white px-8 py-3 rounded-full font-bold transition shadow-lg inline-flex items-center">
-          Mua Ngay <i class="fas fa-arrow-right ml-2"></i>
+          <span data-i18n="hero.button">Shop Now</span> <i class="fas fa-arrow-right ml-2"></i>
         </a>
       </div>
     </div>
@@ -1715,13 +1719,14 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="shop">
 
     <!-- ADVANCED SEARCH / FILTER BAR -->
-    <section class="mb-12 sticky top-24 z-30">
-      <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6">
+    <section class="mb-12">
+      <div class="sticky top-24 z-30">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <!-- Title -->
           <div class="flex items-center gap-2 text-brand-green font-bold text-lg">
             <i class="fas fa-filter"></i>
-            <span>Bộ lọc sản phẩm</span>
+            <span data-i18n="filter.title">Product Filters</span>
           </div>
 
           <!-- Filters -->
@@ -1788,6 +1793,7 @@
           </span>
           <span class="text-gray-400 px-2 py-1 cursor-pointer hover:text-red-500">Xoá tất cả</span>
         </div>
+        </div>
       </div>
     </section>
 
@@ -1795,10 +1801,10 @@
     <section class="mb-16">
       <div class="flex justify-between items-end mb-8">
         <div>
-          <h2 class="text-3xl font-bold text-gray-800">Sản Phẩm Nổi Bật</h2>
-          <p class="text-gray-500 mt-2">Lựa chọn tốt nhất từ nông trại Mountain Harvest</p>
+          <h2 class="text-3xl font-bold text-gray-800" data-i18n="products.featured">Featured Products</h2>
+          <p class="text-gray-500 mt-2" data-i18n="products.subtitle">Best selection from Mountain Harvest farm</p>
         </div>
-        <a href="#" class="text-brand-green font-bold hover:underline">Xem tất cả <i
+        <a href="#" class="text-brand-green font-bold hover:underline"><span data-i18n="products.viewAll">View All</span> <i
             class="fas fa-arrow-right text-xs"></i></a>
       </div>
 
@@ -1811,16 +1817,15 @@
     <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
       <div class="relative rounded-2xl overflow-hidden h-80 group cursor-pointer">
         <img
-          src="https://images.unsplash.com/photo-1495570689269-d883668a6196?ixlib=rb-1.2.1&amp;auto=format&amp;fit=crop&amp;w=1000&amp;q=80"
+          src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"
+          alt="Nông Sản Tươi"
           class="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105">
         <div class="absolute inset-0 bg-black/40 hover:bg-black/30 transition"></div>
         <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-          <h3 class="text-3xl font-bold text-white mb-2 font-serif">Nông Sản Tươi</h3>
-          <p class="text-gray-200 mb-6 max-w-sm">Thu hoạch từ nông trại Đà Lạt, vận chuyển trong ngày để đảm bảo độ tươi
-            ngon.</p>
+          <h3 class="text-3xl font-bold text-white mb-2 font-serif" data-i18n="category.fresh.title">Fresh Produce</h3>
+          <p class="text-gray-200 mb-6 max-w-sm" data-i18n="category.fresh.desc">Harvested from Da Lat farms, delivered same day to ensure freshness.</p>
           <button
-            class="bg-white text-brand-green px-6 py-2 rounded-full font-bold hover:bg-brand-green hover:text-white transition">Mua
-            ngay</button>
+            class="bg-white text-brand-green px-6 py-2 rounded-full font-bold hover:bg-brand-green hover:text-white transition" data-i18n="category.fresh.button">Shop Now</button>
         </div>
       </div>
 
@@ -1830,11 +1835,10 @@
           class="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105">
         <div class="absolute inset-0 bg-black/40 hover:bg-black/30 transition"></div>
         <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-          <h3 class="text-3xl font-bold text-white mb-2 font-serif">Nhu Yếu Phẩm Xanh</h3>
-          <p class="text-gray-200 mb-6 max-w-sm">Sản phẩm chăm sóc nhà cửa từ thiên nhiên, an toàn cho cả trẻ nhỏ.</p>
+          <h3 class="text-3xl font-bold text-white mb-2 font-serif" data-i18n="category.essentials.title">Green Essentials</h3>
+          <p class="text-gray-200 mb-6 max-w-sm" data-i18n="category.essentials.desc">Natural home care products, safe for children.</p>
           <button
-            class="bg-white text-brand-brown px-6 py-2 rounded-full font-bold hover:bg-brand-brown hover:text-white transition">Khám
-            phá</button>
+            class="bg-white text-brand-brown px-6 py-2 rounded-full font-bold hover:bg-brand-brown hover:text-white transition" data-i18n="category.essentials.button">Explore</button>
         </div>
       </div>
     </section>
@@ -1846,14 +1850,13 @@
       <i class="fas fa-lemon text-brand-light/20 text-9xl absolute -bottom-10 -right-10 transform rotate-12"></i>
 
       <div class="relative z-10 max-w-2xl mx-auto">
-        <h2 class="text-3xl font-bold text-brand-green mb-4">Đăng Ký Nhận Tin Khuyến Mãi</h2>
-        <p class="text-gray-600 mb-8">Nhận mã giảm giá 10% cho đơn hàng đầu tiên và cập nhật tin tức về nông sản sạch.
+        <h2 class="text-3xl font-bold text-brand-green mb-4" data-i18n="newsletter.title">Subscribe to Promotions</h2>
+        <p class="text-gray-600 mb-8" data-i18n="newsletter.subtitle">Get 10% off your first order and updates on fresh produce.
         </p>
         <div class="flex flex-col sm:flex-row gap-3">
-          <input type="email" placeholder="Nhập địa chỉ email của bạn..."
+          <input type="email" placeholder="Enter your email..." data-i18n-placeholder="newsletter.placeholder"
             class="flex-1 py-3 px-5 rounded-full border border-gray-300 focus:outline-none focus:border-brand-green">
-          <button class="bg-brand-green text-white py-3 px-8 rounded-full font-bold hover:bg-green-800 transition">Đăng
-            ký</button>
+          <button class="bg-brand-green text-white py-3 px-8 rounded-full font-bold hover:bg-green-800 transition" data-i18n="newsletter.button">Subscribe</button>
         </div>
       </div>
     </section>
@@ -1950,7 +1953,569 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    /**
+     * Mountain Harvest - Frontend Logic
+     */
+
+    // --- i18n Translations ---
+    const translations = {
+      en: {
+        topbar: {
+          freeShipping: '<i class="fas fa-truck mr-2"></i>Free shipping for orders over 500k',
+          hotline: 'Hotline: 1900 1234',
+          support: 'Customer Support'
+        },
+        nav: {
+          account: 'Account',
+          cart: 'Cart',
+          fresh: 'Fresh',
+          dry: 'Dry Food',
+          beverage: 'Beverages',
+          cosmetics: 'Cosmetics'
+        },
+        search: {
+          placeholder: 'Search products...',
+          all: 'All',
+          agricultural: 'Agricultural Products',
+          essentials: 'Essentials',
+          button: 'Search'
+        },
+        cart: {
+          title: 'Your Cart',
+          loading: 'Loading...',
+          empty: 'Cart is empty',
+          total: 'Total:',
+          checkout: 'Checkout Now'
+        },
+        hero: {
+          promo: 'Summer Sale',
+          title: 'Fresh Produce <br> For Green Living',
+          subtitle: 'Up to 20% off on vegetables and fruits this week.',
+          button: 'Shop Now'
+        },
+        filter: {
+          title: 'Product Filters'
+        },
+        products: {
+          featured: 'Featured Products',
+          subtitle: 'Best selection from Mountain Harvest farm',
+          viewAll: 'View All'
+        },
+        category: {
+          fresh: {
+            title: 'Fresh Produce',
+            desc: 'Harvested from Da Lat farms, delivered same day to ensure freshness.',
+            button: 'Shop Now'
+          },
+          essentials: {
+            title: 'Green Essentials',
+            desc: 'Natural home care products, safe for children.',
+            button: 'Explore'
+          }
+        },
+        newsletter: {
+          title: 'Subscribe to Promotions',
+          subtitle: 'Get 10% off your first order and updates on fresh produce.',
+          placeholder: 'Enter your email...',
+          button: 'Subscribe'
+        },
+        toast: {
+          addedToCart: 'Added to cart'
+        }
+      },
+      vi: {
+        topbar: {
+          freeShipping: '<i class="fas fa-truck mr-2"></i>Miễn phí vận chuyển cho đơn hàng từ 500k',
+          hotline: 'Hotline: 1900 1234',
+          support: 'Hỗ trợ khách hàng'
+        },
+        nav: {
+          account: 'Tài khoản',
+          cart: 'Giỏ hàng',
+          fresh: 'Tươi sống',
+          dry: 'Thực phẩm khô',
+          beverage: 'Đồ uống',
+          cosmetics: 'Hoá mỹ phẩm'
+        },
+        search: {
+          placeholder: 'Tìm sản phẩm (vd: Cà chua, Gạo, Nước giặt...)',
+          all: 'Tất cả',
+          agricultural: 'Nông sản',
+          essentials: 'Nhu yếu phẩm',
+          button: 'Tìm'
+        },
+        cart: {
+          title: 'Giỏ hàng của bạn',
+          loading: 'Đang tải...',
+          empty: 'Giỏ hàng trống',
+          total: 'Tổng cộng:',
+          checkout: 'Thanh toán ngay'
+        },
+        hero: {
+          promo: 'Khuyến mãi mùa hè',
+          title: 'Nông Sản Sạch <br> Cho Cuộc Sống Xanh',
+          subtitle: 'Giảm giá đến 20% cho các đơn hàng Rau củ quả trong tuần này.',
+          button: 'Mua Ngay'
+        },
+        filter: {
+          title: 'Bộ lọc sản phẩm'
+        },
+        products: {
+          featured: 'Sản Phẩm Nổi Bật',
+          subtitle: 'Lựa chọn tốt nhất từ nông trại Mountain Harvest',
+          viewAll: 'Xem tất cả'
+        },
+        category: {
+          fresh: {
+            title: 'Nông Sản Tươi',
+            desc: 'Thu hoạch từ nông trại Đà Lạt, vận chuyển trong ngày để đảm bảo độ tươi ngon.',
+            button: 'Mua ngay'
+          },
+          essentials: {
+            title: 'Nhu Yếu Phẩm Xanh',
+            desc: 'Sản phẩm chăm sóc nhà cửa từ thiên nhiên, an toàn cho cả trẻ nhỏ.',
+            button: 'Khám phá'
+          }
+        },
+        newsletter: {
+          title: 'Đăng Ký Nhận Tin Khuyến Mãi',
+          subtitle: 'Nhận mã giảm giá 10% cho đơn hàng đầu tiên và cập nhật tin tức về nông sản sạch.',
+          placeholder: 'Nhập địa chỉ email của bạn...',
+          button: 'Đăng ký'
+        },
+        toast: {
+          addedToCart: 'Đã thêm vào giỏ hàng'
+        }
+      }
+    };
+
+    // --- Language Management ---
+    let currentLang = localStorage.getItem('language') || 'en';
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('language', lang);
+      applyLanguage();
+      updateLanguageButtons();
+    }
+
+    function applyLanguage() {
+      const t = translations[currentLang];
+      
+      // Update all elements with data-i18n attribute
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const keys = key.split('.');
+        let value = t;
+        for (const k of keys) {
+          value = value[k];
+        }
+        if (value) {
+          el.innerHTML = value;
+        }
+      });
+
+      // Update placeholders
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const keys = key.split('.');
+        let value = t;
+        for (const k of keys) {
+          value = value[k];
+        }
+        if (value) {
+          el.placeholder = value;
+        }
+      });
+
+      // Update select options
+      document.querySelectorAll('select option[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const keys = key.split('.');
+        let value = t;
+        for (const k of keys) {
+          value = value[k];
+        }
+        if (value) {
+          el.textContent = value;
+        }
+      });
+    }
+
+    function updateLanguageButtons() {
+      const enBtn = document.getElementById('lang-en');
+      const viBtn = document.getElementById('lang-vi');
+      if (enBtn && viBtn) {
+        if (currentLang === 'en') {
+          enBtn.classList.add('bg-white/20', 'font-bold');
+          enBtn.classList.remove('font-medium');
+          viBtn.classList.remove('bg-white/20', 'font-bold');
+        } else {
+          viBtn.classList.add('bg-white/20', 'font-bold');
+          enBtn.classList.remove('bg-white/20', 'font-bold');
+          enBtn.classList.add('font-medium');
+        }
+      }
+    }
+
+    // --- Mock Data ---
+    const products = [
+      {
+        id: 1,
+        name: "Cà Chua Cherry Hữu Cơ",
+        category: "Rau củ quả",
+        price: 45000,
+        originalPrice: 55000,
+        image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        rating: 4.5,
+        reviews: 45,
+        isHot: false,
+        discount: "-15%",
+        tags: ["Organic"],
+        description: "Cà chua cherry được trồng theo phương pháp hữu cơ tại nông trại Đà Lạt. Vị ngọt thanh, giòn, giàu vitamin, thích hợp ăn sống hoặc làm salad."
+      },
+      {
+        id: 2,
+        name: "Gạo Lứt Đỏ Huyết Rồng",
+        category: "Thực phẩm khô",
+        price: 80000,
+        originalPrice: null,
+        unit: "/2kg",
+        image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        rating: 5,
+        reviews: 128,
+        isHot: false,
+        tags: [],
+        description: "Gạo lứt đỏ huyết rồng chứa nhiều chất xơ và khoáng chất. Hạt gạo dài, màu đỏ nâu đặc trưng, khi nấu chín có mùi thơm nhẹ."
+      },
+      {
+        id: 3,
+        name: "Cà Phê Arabica Cầu Đất",
+        category: "Đồ uống",
+        price: 150000,
+        originalPrice: null,
+        unit: "/500g",
+        image: "https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        rating: 4,
+        reviews: 89,
+        isHot: true,
+        tags: ["Best Seller"],
+        description: "Hạt cà phê Arabica tuyển chọn từ vùng Cầu Đất. Rang mộc 100%, hương vị chua thanh, hậu ngọt, hương thơm nồng nàn quyến rũ."
+      },
+      {
+        id: 4,
+        name: "Nước Giặt Bồ Hòn Tự Nhiên",
+        category: "Hoá mỹ phẩm",
+        price: 120000,
+        originalPrice: null,
+        unit: "/Lít",
+        image: "https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        rating: 5,
+        reviews: 210,
+        isHot: false,
+        tags: ["Handmade"],
+        description: "Nước giặt được chiết xuất từ quả bồ hòn lên men tự nhiên. An toàn lành tính cho da tay và quần áo trẻ em. Khả năng làm sạch hiệu quả."
+      }
+    ];
+
+    const newsData = [
+      {
+        id: 1,
+        title: "Mùa Thu Hoạch Bơ Sáp 034 Đã Bắt Đầu",
+        image: "https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Những trái bơ sáp 034 dẻo, béo ngậy đầu tiên của mùa vụ năm nay đã chính thức lên kệ tại Mountain Harvest.",
+        date: "03/02/2026"
+      },
+      {
+        id: 2,
+        title: "Bí Quyết Giữ Rau Củ Tươi Lâu Trong Tủ Lạnh",
+        image: "https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Chia sẻ những mẹo vặt đơn giản nhưng hiệu quả để bảo quản rau củ quả luôn tươi ngon suốt cả tuần.",
+        date: "01/02/2026"
+      },
+      {
+        id: 3,
+        title: "Chương Trình 'Chung Tay Vì Môi Trường Xanh'",
+        image: "https://images.unsplash.com/photo-1542601906990-24ccd08d7455?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Mountain Harvest cam kết giảm thiểu rác thải nhựa bằng việc sử dụng bao bì lá chuối và túi giấy tái chế.",
+        date: "28/01/2026"
+      },
+      {
+        id: 4,
+        title: "Lễ Hội Trái Cây Miền Nhiệt Đới Sắp Diễn Ra",
+        image: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Cùng hòa mình vào không khí sôi động của lễ hội trái cây với hơn 50 loại đặc sản vùng miền quy tụ.",
+        date: "25/01/2026"
+      },
+      {
+        id: 5,
+        title: "Cách Làm Salad Cầu Vồng Tốt Cho Sức Khỏe",
+        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Công thức salad đơn giản, giàu vitamin với sự kết hợp của 7 loại rau củ quả nhiều màu sắc.",
+        date: "20/01/2026"
+      },
+      {
+        id: 6,
+        title: "Mountain Harvest Đạt Chứng Nhận Organic Quốc Tế",
+        image: "https://images.unsplash.com/photo-1621451537084-482c73073a0f?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        summary: "Tự hào là đơn vị tiên phong áp dụng tiêu chuẩn canh tác hữu cơ chuẩn Châu Âu tại Việt Nam.",
+        date: "15/01/2026"
+      }
+    ];
+
+    // --- State Management ---
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // --- Functions ---
+
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const existingItem = cart.find(item => item.id === productId);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+
+      saveCart();
+      const t = translations[currentLang];
+      showToast(`${t.toast.addedToCart}: "${product.name}"`);
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      saveCart();
+    }
+
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    // --- Rendering ---
+
+    function renderProducts() {
+      const container = document.getElementById('product-list');
+      if (!container) return;
+
+      container.innerHTML = products.map(product => `
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-xl transition duration-300 group overflow-hidden border border-gray-100">
+            <div class="relative h-64 overflow-hidden">
+                ${product.discount ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">${product.discount}</span>` : ''}
+                ${product.tags.map(tag => {
+        let colorClass = 'bg-blue-100 text-blue-600';
+        if (tag === 'Best Seller') colorClass = 'bg-brand-orange text-white';
+        if (tag === 'Organic') colorClass = 'bg-green-100 text-brand-green';
+        return `<span class="absolute top-3 right-3 ${colorClass} text-xs font-bold px-2 py-1 rounded z-10 mr-1">${tag}</span>`;
+      }).join('')}
+                
+                <img src="${product.image}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500">
+                
+                <div class="absolute bottom-0 left-0 right-0 bg-white/90 p-2 translate-y-full group-hover:translate-y-0 transition duration-300 flex justify-center gap-2 backdrop-blur-sm">
+                    <button class="p-2 rounded-full bg-gray-100 hover:bg-brand-green hover:text-white transition" title="Xem nhanh" onclick="openProductModal(${product.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="text-xs text-gray-500 mb-1">${product.category}</div>
+                <h3 class="font-bold text-lg text-gray-800 hover:text-brand-green cursor-pointer truncate" onclick="openProductModal(${product.id})">${product.name}</h3>
+                <div class="flex items-center my-2">
+                    <div class="flex text-yellow-400 text-xs">
+                        ${Array(5).fill(0).map((_, i) =>
+        i < Math.floor(product.rating) ? '<i class="fas fa-star"></i>' :
+          (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star"></i>')
+      ).join('')}
+                    </div>
+                    <span class="text-xs text-gray-400 ml-2">(${product.reviews} đánh giá)</span>
+                </div>
+                <div class="flex justify-between items-center mt-3">
+                    <div>
+                        <span class="text-lg font-bold text-brand-green">${formatCurrency(product.price)}</span>
+                        ${product.originalPrice ? `<span class="text-sm text-gray-400 line-through ml-2">${formatCurrency(product.originalPrice)}</span>` : ''}
+                        ${product.unit ? `<span class="text-xs text-gray-500">${product.unit}</span>` : ''}
+                    </div>
+                    <button onclick="addToCart(${product.id})" class="bg-brand-green text-white p-2 rounded-lg hover:bg-brand-darkGreen transition shadow-lg shadow-green-200">
+                        <i class="fas fa-cart-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    function renderNews() {
+      const container = document.getElementById('news-list');
+      if (!container) return;
+
+      container.innerHTML = newsData.map(news => `
+        <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
+            <div class="h-48 overflow-hidden">
+                <img src="${news.image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500">
+            </div>
+            <div class="p-6">
+                <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date}</span>
+                <h3 class="font-bold text-lg mb-2 hover:text-brand-green cursor-pointer">${news.title}</h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">${news.summary}</p>
+                <button class="text-brand-green font-bold text-sm hover:underline">Đọc tiếp <i class="fas fa-arrow-right text-xs"></i></button>
+            </div>
+        </div>
+    `).join('');
+    }
+
+    function renderCart() {
+      const cartCount = document.getElementById('cart-count');
+      const cartItems = document.getElementById('cart-items');
+      const cartTotal = document.getElementById('cart-total');
+
+      // Update Badge
+      const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (cartCount) cartCount.innerText = totalQty;
+      if (cartCount) cartCount.classList.toggle('hidden', totalQty === 0);
+
+      // Update Mini Cart Items
+      if (cartItems) {
+        if (cart.length === 0) {
+          cartItems.innerHTML = `<div class="text-center text-gray-500 py-4 text-sm">${translations[currentLang].cart.empty}</div>`;
+        } else {
+          cartItems.innerHTML = cart.map(item => `
+                <div class="flex gap-2 group relative">
+                    <img src="${item.image}" class="w-12 h-12 object-cover rounded">
+                    <div class="flex-1">
+                        <div class="text-xs font-bold truncate">${item.name}</div>
+                        <div class="text-xs text-gray-500">${item.quantity} x ${formatCurrency(item.price)}</div>
+                    </div>
+                     <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 absolute right-0 top-1">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+      }
+
+      // Update Total
+      if (cartTotal) {
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        cartTotal.innerText = formatCurrency(total);
+      }
+    }
+
+    // --- Modal Logic ---
+
+    function openProductModal(id) {
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+
+      const modal = document.getElementById('product-modal');
+      const content = document.getElementById('modal-content');
+
+      // Populate Modal Content
+      content.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="h-64 md:h-full rounded-lg overflow-hidden">
+                <img src="${product.image}" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <span class="text-sm text-brand-green font-bold bg-green-100 px-2 py-1 rounded-full">${product.category}</span>
+                <h2 class="text-2xl font-bold text-gray-800 mt-2 mb-2 font-serif">${product.name}</h2>
+                <div class="flex items-center mb-4">
+                    <div class="flex text-yellow-400 text-sm">
+                        ${Array(5).fill(0).map((_, i) =>
+        i < Math.floor(product.rating) ? '<i class="fas fa-star"></i>' :
+          (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star"></i>')
+      ).join('')}
+                    </div>
+                    <span class="text-sm text-gray-500 ml-2">(${product.reviews} đánh giá)</span>
+                </div>
+                
+                <div class="text-3xl font-bold text-brand-green mb-4">
+                    ${formatCurrency(product.price)}
+                    ${product.unit ? `<span class="text-base font-normal text-gray-500">${product.unit}</span>` : ''}
+                </div>
+                
+                <p class="text-gray-600 mb-6 leading-relaxed">${product.description}</p>
+                
+                <div class="flex gap-4">
+                     <div class="inline-flex items-center border border-gray-300 rounded-lg">
+                        <button class="px-3 py-2 hover:bg-gray-100 text-gray-600 font-bold">-</button>
+                        <input type="text" value="1" class="w-12 text-center border-none focus:ring-0 text-sm font-bold">
+                        <button class="px-3 py-2 hover:bg-gray-100 text-gray-600 font-bold">+</button>
+                    </div>
+                    <button onclick="addToCart(${product.id}); closeModal()" class="flex-1 bg-brand-green text-white py-2 rounded-lg font-bold hover:bg-brand-darkGreen transition shadow-lg shadow-green-200">
+                        Thêm vào giỏ
+                    </button>
+                    <button class="p-3 border border-gray-300 rounded-lg text-gray-500 hover:text-red-500 hover:border-red-500 transition">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+      modal.classList.remove('hidden');
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('product-modal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // --- Toast Notification ---
+    function showToast(message) {
+      // Check if toast container exists, if not create it
+      let toastContainer = document.getElementById('toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none';
+        document.body.appendChild(toastContainer);
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-y-10 opacity-0 transition-all duration-300';
+      toast.innerHTML = `<i class="fas fa-check-circle text-brand-light"></i> <span>${message}</span>`;
+
+      toastContainer.appendChild(toast);
+
+      // Animate in
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-10', 'opacity-0');
+      });
+
+      // Remove after 3s
+      setTimeout(() => {
+        toast.classList.add('translate-y-10', 'opacity-0');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    }
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+      applyLanguage();
+      updateLanguageButtons();
+      renderProducts();
+      renderNews();
+      renderCart();
+
+      // Modal Close Event (Click outside)
+      const modal = document.getElementById('product-modal');
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    });
+  </script>
 </body>
 
 </html>
