@@ -386,8 +386,14 @@ async def api_news_one(id: int):
 async def news_detail_page(req, id: int):
     """Serve news detail page with server-side rendering."""
     idx = PUBLIC_DIR / "index.html"
-    if not idx.exists():
-        return Div("Mountain Harvest - Add public/index.html")
+    
+    # Try to read the file directly, fallback to query param redirect if file not found (for Vercel compatibility)
+    try:
+        html_content = idx.read_text(encoding='utf-8')
+    except (FileNotFoundError, OSError, Exception) as e:
+        # If file reading fails (e.g., on Vercel), fallback to query param redirect
+        # This uses the same route handler as /?news={id} which may have better file access
+        return RedirectResponse("/?news=" + str(id), status_code=302)
     
     try:
         async with get_conn() as conn:
@@ -395,7 +401,6 @@ async def news_detail_page(req, id: int):
                 row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", id)
                 if row:
                     news = dict(row)
-                    html_content = idx.read_text(encoding='utf-8')
                     current_url = str(req.url)
                     html_content = render_news_detail_html(html_content, news, current_url)
                     return HTMLResponse(content=html_content)
@@ -403,7 +408,6 @@ async def news_detail_page(req, id: int):
                 # Fallback to mock data
                 for item in _mock_news():
                     if item.get("id") == id:
-                        html_content = idx.read_text(encoding='utf-8')
                         current_url = str(req.url)
                         html_content = render_news_detail_html(html_content, item, current_url)
                         return HTMLResponse(content=html_content)
