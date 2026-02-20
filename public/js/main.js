@@ -80,9 +80,19 @@ document.addEventListener('DOMContentLoaded', () => {
     (!newsDetailEl.classList.contains('hidden')) &&
     (mainShopContent && window.getComputedStyle(mainShopContent).display === 'none');
   
+  // Check for ?news= parameter (client-side fallback)
+  if (typeof checkNewsParam === 'function') {
+    checkNewsParam();
+  }
+  
   // Only load homepage data if not on news detail page
   if (!isNewsDetailPage) {
-    loadData();
+    // Also check if we're loading news detail via ?news= parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const newsId = urlParams.get('news');
+    if (!newsId) {
+      loadData();
+    }
   }
   
   renderCart();

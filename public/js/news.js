@@ -207,6 +207,21 @@ function showNewsList() {
   resetNewsSEO();
 }
 
+function checkNewsParam() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const newsId = urlParams.get('news');
+  if (newsId) {
+    const id = parseInt(newsId, 10);
+    if (!isNaN(id) && id > 0) {
+      loadNewsDetail(id);
+      // Update URL to clean path without query parameter (but keep history)
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', '/news/' + id);
+      }
+    }
+  }
+}
+
 function renderNews() {
   const container = document.getElementById('news-list');
   if (!container) return;
