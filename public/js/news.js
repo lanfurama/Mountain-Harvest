@@ -208,6 +208,31 @@ function showNewsList() {
 }
 
 function checkNewsParam() {
+  // Check if content is already server-rendered (check data attribute or content)
+  const newsDetailEl = document.getElementById('news-detail');
+  const isServerRendered = newsDetailEl && (
+    newsDetailEl.getAttribute('data-server-rendered') === 'true' ||
+    (!newsDetailEl.classList.contains('hidden') &&
+     newsDetailEl.querySelector('#news-detail-title') &&
+     newsDetailEl.querySelector('#news-detail-title').textContent.trim() !== '')
+  );
+  
+  // If already server-rendered, don't load again
+  if (isServerRendered) {
+    return;
+  }
+  
+  // Check URL path /news/{id}
+  const pathMatch = window.location.pathname.match(/^\/news\/(\d+)$/);
+  if (pathMatch) {
+    const id = parseInt(pathMatch[1], 10);
+    if (!isNaN(id) && id > 0) {
+      loadNewsDetail(id);
+      return;
+    }
+  }
+  
+  // Check query parameter ?news=
   const urlParams = new URLSearchParams(window.location.search);
   const newsId = urlParams.get('news');
   if (newsId) {

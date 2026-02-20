@@ -1,6 +1,18 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     { "source": "/news/:id", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "headers": [
+    {
+      "source": "/news/:id",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
   ]
 }

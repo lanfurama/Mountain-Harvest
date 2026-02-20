@@ -76,23 +76,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check if news detail page is being displayed (server-rendered)
   const newsDetailEl = document.getElementById('news-detail');
   const mainShopContent = document.getElementById('main-shop-content');
-  const isNewsDetailPage = newsDetailEl && 
-    (!newsDetailEl.classList.contains('hidden')) &&
-    (mainShopContent && window.getComputedStyle(mainShopContent).display === 'none');
+  const isServerRendered = newsDetailEl && (
+    newsDetailEl.getAttribute('data-server-rendered') === 'true' ||
+    (!newsDetailEl.classList.contains('hidden') &&
+     newsDetailEl.querySelector('#news-detail-title') &&
+     newsDetailEl.querySelector('#news-detail-title').textContent.trim() !== '')
+  );
   
-  // Check for ?news= parameter (client-side fallback)
-  if (typeof checkNewsParam === 'function') {
+  const isNewsDetailPage = isServerRendered || 
+    (mainShopContent && window.getComputedStyle(mainShopContent).display === 'none') ||
+    window.location.pathname.match(/^\/news\/(\d+)$/);
+  
+  // Only check for client-side loading if NOT server-rendered
+  if (!isServerRendered && typeof checkNewsParam === 'function') {
     checkNewsParam();
   }
   
   // Only load homepage data if not on news detail page
   if (!isNewsDetailPage) {
-    // Also check if we're loading news detail via ?news= parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const newsId = urlParams.get('news');
-    if (!newsId) {
-      loadData();
-    }
+    loadData();
   }
   
   renderCart();

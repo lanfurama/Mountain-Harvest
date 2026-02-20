@@ -108,18 +108,19 @@ class NewsViews:
         base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
         
         # Render news detail content (without hidden class)
-        news_detail_html = f'''<article id="news-detail" class="w-full">
+        # Add data attribute to indicate server-rendered content
+        news_detail_html = f'''<article id="news-detail" class="w-full" data-server-rendered="true">
       <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
-        <img src="{image}" alt="{title}" class="w-full h-full object-cover">
+        <img id="news-detail-image" src="{image}" alt="{title}" class="w-full h-full object-cover">
       </div>
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
         <a href="/" class="inline-flex items-center gap-2 text-brand-green font-bold hover:underline mb-6">
           <i class="fas fa-arrow-left"></i> Quay lại tin tức
         </a>
-        {f'<span class="text-sm text-gray-500 block mb-2">{date}</span>' if date else ''}
-        {f'<span class="text-sm text-gray-500 block mb-4">Tác giả: {author}</span>' if author else ''}
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{h1_custom}</h1>
-        <div class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none">{content}</div>
+        {f'<span id="news-detail-date" class="text-sm text-gray-500 block mb-2">{date}</span>' if date else '<span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>'}
+        {f'<span id="news-detail-author" class="text-sm text-gray-500 block mb-4">Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="text-sm text-gray-500 block mb-4"></span>'}
+        <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{h1_custom}</h1>
+        <div id="news-detail-content" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none">{content}</div>
       </div>
     </article>'''
         
