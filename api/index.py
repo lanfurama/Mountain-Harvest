@@ -94,7 +94,18 @@ def render_news_detail_html(base_html: str, news: dict, current_url: str) -> str
     import re
     
     title = escape(news.get("title", "Mountain Harvest"))
-    image = escape(news.get("image", ""))
+    image = news.get("image", "") or ""
+    # Ensure image is absolute URL
+    if image and not image.startswith(("http://", "https://")):
+        # Extract base URL from current_url
+        from urllib.parse import urlparse
+        parsed = urlparse(current_url)
+        base_url = f"{parsed.scheme}://{parsed.netloc}"
+        if image.startswith("/"):
+            image = base_url + image
+        else:
+            image = base_url + "/" + image
+    image = escape(image)
     content = news.get("content", "")
     author = escape(news.get("author", ""))
     date = escape(news.get("date", ""))
@@ -104,32 +115,39 @@ def render_news_detail_html(base_html: str, news: dict, current_url: str) -> str
     description = description.strip()[:160] if description.strip() else "Tin tức từ Mountain Harvest"
     description_escaped = escape(description)
     
-    # Update meta tags
-    replacements = [
-        (r'<title>.*?</title>', f'<title>{title} - Mountain Harvest</title>'),
-        (r'<meta\s+name=["\']description["\'].*?>', f'<meta name="description" content="{description_escaped}">'),
-        (r'<meta\s+property=["\']og:title["\'].*?>', f'<meta property="og:title" content="{title}">'),
-        (r'<meta\s+property=["\']og:description["\'].*?>', f'<meta property="og:description" content="{description_escaped}">'),
-        (r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{image}">'),
-        (r'<meta\s+property=["\']og:url["\'].*?>', f'<meta property="og:url" content="{current_url}">'),
-        (r'<meta\s+property=["\']og:type["\'].*?>', '<meta property="og:type" content="article">'),
-        (r'<meta\s+name=["\']twitter:title["\'].*?>', f'<meta name="twitter:title" content="{title}">'),
-        (r'<meta\s+name=["\']twitter:description["\'].*?>', f'<meta name="twitter:description" content="{description_escaped}">'),
-        (r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{image}">'),
+    # Update title
+    base_html = re.sub(r'<title>.*?</title>', f'<title>{title} - Mountain Harvest</title>', base_html, flags=re.IGNORECASE | re.DOTALL)
+    
+    # Update or add meta tags - use more flexible regex that matches any content value
+    meta_tags_to_update = [
+        ('name', 'description', description_escaped),
+        ('property', 'og:title', title),
+        ('property', 'og:description', description_escaped),
+        ('property', 'og:image', image),
+        ('property', 'og:url', current_url),
+        ('property', 'og:type', 'article'),
+        ('name', 'twitter:title', title),
+        ('name', 'twitter:description', description_escaped),
+        ('name', 'twitter:image', image),
+        ('name', 'twitter:card', 'summary_large_image'),
     ]
     
-    for pattern, replacement in replacements:
-        base_html = re.sub(pattern, replacement, base_html, flags=re.IGNORECASE)
-    
-    # Add missing meta tags
-    if '<meta property="og:title"' not in base_html:
-        base_html = base_html.replace('</head>', f'  <meta property="og:title" content="{title}">\n</head>')
-    if '<meta property="og:image"' not in base_html:
-        base_html = base_html.replace('</head>', f'  <meta property="og:image" content="{image}">\n</head>')
-    if '<meta property="og:url"' not in base_html:
-        base_html = base_html.replace('</head>', f'  <meta property="og:url" content="{current_url}">\n</head>')
-    if '<meta property="og:type"' not in base_html:
-        base_html = base_html.replace('</head>', f'  <meta property="og:type" content="article">\n</head>')
+    for attr_type, attr_name, attr_value in meta_tags_to_update:
+        # Pattern to match existing meta tag (matches any content value including empty)
+        if attr_type == 'property':
+            pattern = rf'<meta\s+property=["\']{re.escape(attr_name)}["\'][^>]*>'
+            replacement = f'<meta property="{attr_name}" content="{attr_value}">'
+        else:
+            pattern = rf'<meta\s+name=["\']{re.escape(attr_name)}["\'][^>]*>'
+            replacement = f'<meta name="{attr_name}" content="{attr_value}">'
+        
+        # Try to replace existing tag
+        if re.search(pattern, base_html, flags=re.IGNORECASE):
+            base_html = re.sub(pattern, replacement, base_html, flags=re.IGNORECASE, count=1)
+        else:
+            # Add new meta tag before </head> if not found
+            new_tag = f'  <meta {attr_type}="{attr_name}" content="{attr_value}">\n'
+            base_html = base_html.replace('</head>', new_tag + '</head>', 1)
     
     # Add style to hide shop content and hero
     hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
