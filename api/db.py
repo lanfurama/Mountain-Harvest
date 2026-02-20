@@ -87,7 +87,7 @@ async def init_db():
                 id SERIAL PRIMARY KEY,
                 slug VARCHAR(50) UNIQUE NOT NULL,
                 title VARCHAR(255),
-                desc TEXT,
+                "desc" TEXT,
                 image TEXT,
                 button_text VARCHAR(50)
             );
@@ -113,7 +113,7 @@ async def init_db():
         r = await conn.fetchval("SELECT COUNT(*) FROM category_brochures")
         if r == 0:
             await conn.execute("""
-                INSERT INTO category_brochures (slug, title, desc, image, button_text) VALUES
+                INSERT INTO category_brochures (slug, title, "desc", image, button_text) VALUES
                 ('fresh', 'Fresh Produce', 'Harvested from Da Lat farms, delivered same day to ensure freshness.',
                  'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
                  'Shop Now'),
