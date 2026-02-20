@@ -3,7 +3,7 @@ import os
 import base64
 import json
 from pathlib import Path
-from starlette.responses import JSONResponse, FileResponse, RedirectResponse
+from starlette.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
 from starlette.staticfiles import StaticFiles
 from starlette.middleware import Middleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -89,12 +89,76 @@ async def serve_components(filename: str):
 
 
 @rt("/")
-async def index():
-    """Serve frontend index.html."""
+async def index(req):
+    """Serve frontend index.html with dynamic SEO for news."""
     idx = PUBLIC_DIR / "index.html"
-    if idx.exists():
-        return FileResponse(idx)
-    return Div("Mountain Harvest - Add public/index.html")
+    if not idx.exists():
+        return Div("Mountain Harvest - Add public/index.html")
+    
+    # Check for news parameter
+    news_id = req.query_params.get("news")
+    if news_id:
+        try:
+            news_id_int = int(news_id)
+            async with get_conn() as conn:
+                if conn:
+                    row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", news_id_int)
+                    if row:
+                        news = dict(row)
+                        # Read HTML file
+                        html_content = idx.read_text(encoding='utf-8')
+                        
+                        # Extract description from content
+                        description = news.get("content", "")
+                        if description:
+                            import re
+                            description = re.sub(r'<[^>]+>', '', description)
+                            description = description.strip()[:160]
+                        if not description:
+                            description = "Tin tức từ Mountain Harvest"
+                        
+                        # Escape HTML entities for meta tags
+                        from html import escape
+                        title = escape(news.get("title", "Mountain Harvest"))
+                        description = escape(description)
+                        image = escape(news.get("image", ""))
+                        current_url = str(req.url)
+                        
+                        # Replace or add meta tags
+                        replacements = [
+                            (r'<title>.*?</title>', f'<title>{title} - Mountain Harvest</title>'),
+                            (r'<meta\s+name=["\']description["\'].*?>', f'<meta name="description" content="{description}">'),
+                            (r'<meta\s+property=["\']og:title["\'].*?>', f'<meta property="og:title" content="{title}">'),
+                            (r'<meta\s+property=["\']og:description["\'].*?>', f'<meta property="og:description" content="{description}">'),
+                            (r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{image}">'),
+                            (r'<meta\s+property=["\']og:url["\'].*?>', f'<meta property="og:url" content="{current_url}">'),
+                            (r'<meta\s+property=["\']og:type["\'].*?>', '<meta property="og:type" content="article">'),
+                            (r'<meta\s+name=["\']twitter:title["\'].*?>', f'<meta name="twitter:title" content="{title}">'),
+                            (r'<meta\s+name=["\']twitter:description["\'].*?>', f'<meta name="twitter:description" content="{description}">'),
+                            (r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{image}">'),
+                        ]
+                        
+                        import re
+                        for pattern, replacement in replacements:
+                            html_content = re.sub(pattern, replacement, html_content, flags=re.IGNORECASE)
+                        
+                        # Add missing meta tags if they don't exist
+                        if '<meta property="og:title"' not in html_content:
+                            html_content = html_content.replace('</head>', f'  <meta property="og:title" content="{title}">\n</head>')
+                        if '<meta property="og:image"' not in html_content:
+                            html_content = html_content.replace('</head>', f'  <meta property="og:image" content="{image}">\n</head>')
+                        if '<meta property="og:url"' not in html_content:
+                            html_content = html_content.replace('</head>', f'  <meta property="og:url" content="{current_url}">\n</head>')
+                        if '<meta property="og:type"' not in html_content:
+                            html_content = html_content.replace('</head>', f'  <meta property="og:type" content="article">\n</head>')
+                        
+                        return HTMLResponse(content=html_content)
+        except (ValueError, Exception) as e:
+            # If news ID is invalid or error occurs, serve normal HTML
+            pass
+    
+    # Serve normal HTML
+    return FileResponse(idx)
 
 
 # --- API: Products ---
