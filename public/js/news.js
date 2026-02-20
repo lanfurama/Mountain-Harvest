@@ -91,6 +91,72 @@ function renderNewsPagination() {
   });
 }
 
+function updateNewsSEO(news) {
+  const title = news.title || 'Mountain Harvest';
+  const description = news.content ? news.content.replace(/<[^>]*>/g, '').substring(0, 160) : 'Tin tức từ Mountain Harvest';
+  const image = news.image || '';
+  const siteUrl = window.location.origin;
+  const currentUrl = window.location.href;
+
+  // Update document title
+  document.title = title + ' - Mountain Harvest';
+
+  // Update or create meta tags
+  function setMetaTag(property, content) {
+    let meta = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      if (property.startsWith('og:')) {
+        meta.setAttribute('property', property);
+      } else {
+        meta.setAttribute('name', property);
+      }
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', content);
+  }
+
+  // SEO Meta Tags
+  setMetaTag('description', description);
+  setMetaTag('og:title', title);
+  setMetaTag('og:description', description);
+  setMetaTag('og:image', image);
+  setMetaTag('og:url', currentUrl);
+  setMetaTag('og:type', 'article');
+  setMetaTag('twitter:card', 'summary_large_image');
+  setMetaTag('twitter:title', title);
+  setMetaTag('twitter:description', description);
+  setMetaTag('twitter:image', image);
+
+  // Update canonical link
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.setAttribute('rel', 'canonical');
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute('href', currentUrl);
+}
+
+function resetNewsSEO() {
+  const defaultTitle = 'Mountain Harvest - Tinh Hoa Nông Sản & Nhu Yếu Phẩm';
+  const defaultDescription = 'Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.';
+  
+  document.title = defaultTitle;
+  
+  function setMetaTag(property, content) {
+    let meta = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+    if (meta) {
+      meta.setAttribute('content', content);
+    }
+  }
+
+  setMetaTag('description', defaultDescription);
+  setMetaTag('og:title', defaultTitle);
+  setMetaTag('og:description', defaultDescription);
+  setMetaTag('og:type', 'website');
+}
+
 async function loadNewsDetail(id) {
   const shopWrap = document.getElementById('main-shop-content');
   const detailEl = document.getElementById('news-detail');
@@ -100,6 +166,10 @@ async function loadNewsDetail(id) {
     if (!res.ok) { showNewsList(); return; }
     const news = await res.json();
     if (news.error) { showNewsList(); return; }
+    
+    // Update SEO meta tags
+    updateNewsSEO(news);
+    
     document.getElementById('news-detail-image').src = news.image || '';
     document.getElementById('news-detail-image').alt = news.title || '';
     document.getElementById('news-detail-date').textContent = news.date ? news.date : '';
@@ -133,6 +203,8 @@ function showNewsList() {
   if (headerEl) {
     headerEl.classList.remove('hidden');
   }
+  // Reset SEO to default
+  resetNewsSEO();
 }
 
 function renderNews() {
