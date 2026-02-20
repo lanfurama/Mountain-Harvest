@@ -1733,12 +1733,12 @@
           <div class="flex flex-wrap gap-3 flex-1 md:justify-end">
             <!-- Category Filter -->
             <div class="relative">
-              <select
+              <select id="filter-category" name="category"
                 class="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-brand-green text-sm font-medium">
-                <option>Danh mục: Tất cả</option>
-                <option>Rau củ quả</option>
-                <option>Hạt &amp; Ngũ cốc</option>
-                <option>Gia dụng</option>
+                <option value="">Danh mục: Tất cả</option>
+                <option value="Rau củ quả">Rau củ quả</option>
+                <option value="Hạt & Ngũ cốc">Hạt &amp; Ngũ cốc</option>
+                <option value="Gia dụng">Gia dụng</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <i class="fas fa-chevron-down text-xs"></i>
@@ -1747,26 +1747,26 @@
 
             <!-- Price Filter -->
             <div class="relative">
-              <select
+              <select id="filter-price" name="price"
                 class="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-brand-green text-sm font-medium">
-                <option>Mức giá: Tất cả</option>
-                <option>Dưới 50.000đ</option>
-                <option>50.000đ - 200.000đ</option>
-                <option>Trên 200.000đ</option>
+                <option value="">Mức giá: Tất cả</option>
+                <option value="under50">Dưới 50.000đ</option>
+                <option value="50-200">50.000đ - 200.000đ</option>
+                <option value="over200">Trên 200.000đ</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <i class="fas fa-chevron-down text-xs"></i>
               </div>
             </div>
 
-            <!-- Origin Filter -->
+            <!-- Standard Filter -->
             <div class="relative">
-              <select
+              <select id="filter-standard" name="standard"
                 class="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-brand-green text-sm font-medium">
-                <option>Tiêu chuẩn: Tất cả</option>
-                <option>Organic</option>
-                <option>VietGAP</option>
-                <option>Handmade</option>
+                <option value="">Tiêu chuẩn: Tất cả</option>
+                <option value="Organic">Organic</option>
+                <option value="VietGAP">VietGAP</option>
+                <option value="Handmade">Handmade</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <i class="fas fa-chevron-down text-xs"></i>
@@ -1776,22 +1776,21 @@
 
           <!-- Sort -->
           <div class="border-l pl-4 hidden md:block">
-            <select
+            <select id="filter-sort" name="sort"
               class="border-none text-sm font-bold text-gray-600 focus:ring-0 cursor-pointer hover:text-brand-green">
-              <option>Mới nhất</option>
-              <option>Bán chạy nhất</option>
-              <option>Giá thấp đến cao</option>
+              <option value="newest">Mới nhất</option>
+              <option value="bestseller">Bán chạy nhất</option>
+              <option value="price_asc">Giá thấp đến cao</option>
+              <option value="price_desc">Giá cao đến thấp</option>
             </select>
           </div>
         </div>
 
-        <!-- Active Filters Tags (Example) -->
-        <div class="flex gap-2 mt-4 text-xs">
-          <span
-            class="bg-green-100 text-brand-green px-3 py-1 rounded-full flex items-center cursor-pointer hover:bg-green-200">
-            Organic <i class="fas fa-times ml-2"></i>
-          </span>
-          <span class="text-gray-400 px-2 py-1 cursor-pointer hover:text-red-500">Xoá tất cả</span>
+        <!-- Active Filters Tags -->
+        <div id="active-filters" class="flex gap-2 mt-4 text-xs flex-wrap items-center hidden">
+          <span class="text-gray-500">Đang lọc:</span>
+          <span id="active-filters-tags"></span>
+          <span id="clear-filters" class="text-gray-400 px-2 py-1 cursor-pointer hover:text-red-500">Xoá tất cả</span>
         </div>
         </div>
       </div>
@@ -1811,6 +1810,7 @@
       <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Products will be injected here by JS -->
       </div>
+      <div id="product-pagination" class="flex justify-center items-center gap-2 mt-8 flex-wrap"></div>
     </section>
 
     <!-- CATEGORY BROCHURE (Re-styled for Sales) -->
@@ -1854,6 +1854,7 @@
       <div id="news-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- News items loaded from API -->
       </div>
+      <div id="news-pagination" class="flex justify-center items-center gap-2 mt-8 flex-wrap"></div>
     </section>
 
     <!-- Newsletter -->
@@ -2181,26 +2182,160 @@
     }
 
     // --- Data (loaded from API) ---
+    const PRODUCTS_PER_PAGE = 8;
+    const NEWS_PER_PAGE = 6;
     let products = [];
     let newsData = [];
+    let productsPage = 1, productsTotal = 0, productsTotalPages = 0;
+    let newsPage = 1, newsTotal = 0, newsTotalPages = 0;
 
-    async function loadData() {
+    function getFilterState() {
+      return {
+        category: (document.getElementById('filter-category') && document.getElementById('filter-category').value) || '',
+        price: (document.getElementById('filter-price') && document.getElementById('filter-price').value) || '',
+        standard: (document.getElementById('filter-standard') && document.getElementById('filter-standard').value) || '',
+        sort: (document.getElementById('filter-sort') && document.getElementById('filter-sort').value) || 'newest',
+      };
+    }
+
+    function buildProductsUrl(page) {
+      const f = getFilterState();
+      const params = new URLSearchParams({ page: String(page), limit: String(PRODUCTS_PER_PAGE), sort: f.sort });
+      if (f.category) params.set('category', f.category);
+      if (f.price) params.set('price', f.price);
+      if (f.standard) params.set('standard', f.standard);
+      return '/api/products?' + params.toString();
+    }
+
+    async function loadProducts(page) {
+      page = page || 1;
       try {
-        const [pRes, nRes] = await Promise.all([fetch('/api/products'), fetch('/api/news')]);
-        if (pRes.ok) products = await pRes.json();
-        if (nRes.ok) newsData = await nRes.json();
+        const res = await fetch(buildProductsUrl(page));
+        if (res.ok) {
+          const data = await res.json();
+          products = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+          productsTotal = typeof data.total === 'number' ? data.total : products.length;
+          productsPage = typeof data.page === 'number' ? data.page : 1;
+          const limit = typeof data.limit === 'number' ? data.limit : PRODUCTS_PER_PAGE;
+          productsTotalPages = typeof data.totalPages === 'number' ? data.totalPages : Math.max(1, Math.ceil(productsTotal / limit));
+        } else {
+          products = [];
+          productsTotal = 0;
+          productsPage = 1;
+          productsTotalPages = 1;
+        }
       } catch (e) {
-        console.warn('API fetch failed, using fallback data', e);
-        products = [
+        console.warn('Products API failed', e);
+        const fallback = [
           { id: 1, name: "Cà Chua Cherry Hữu Cơ", category: "Rau củ quả", price: 45000, originalPrice: 55000, unit: null, image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", rating: 4.5, reviews: 45, isHot: false, discount: "-15%", tags: ["Organic"], description: "Cà chua cherry hữu cơ." },
           { id: 2, name: "Gạo Lứt Đỏ Huyết Rồng", category: "Thực phẩm khô", price: 80000, originalPrice: null, unit: "/2kg", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", rating: 5, reviews: 128, isHot: false, discount: null, tags: [], description: "Gạo lứt đỏ huyết rồng." }
         ];
-        newsData = [
-          { id: 1, title: "Mùa Thu Hoạch Bơ Sáp 034", image: "https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", summary: "Những trái bơ sáp 034 đầu tiên đã lên kệ.", date: "03/02/2026" }
-        ];
+        products = fallback;
+        productsTotal = fallback.length;
+        productsPage = 1;
+        productsTotalPages = 1;
       }
       renderProducts();
+      renderProductsPagination();
+      renderActiveFilters();
+    }
+
+    function renderActiveFilters() {
+      const f = getFilterState();
+      const tags = [];
+      if (f.category) tags.push({ label: f.category, key: 'category' });
+      if (f.price) tags.push({ label: f.price === 'under50' ? 'Dưới 50k' : f.price === '50-200' ? '50k-200k' : 'Trên 200k', key: 'price' });
+      if (f.standard) tags.push({ label: f.standard, key: 'standard' });
+      const container = document.getElementById('active-filters');
+      const tagsEl = document.getElementById('active-filters-tags');
+      if (!container || !tagsEl) return;
+      if (tags.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+      container.classList.remove('hidden');
+      tagsEl.innerHTML = tags.map(function (t) {
+        return '<span class="bg-green-100 text-brand-green px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-green-200" data-clear="' + t.key + '">' + t.label + ' <i class="fas fa-times text-xs"></i></span>';
+      }).join('');
+      tagsEl.querySelectorAll('[data-clear]').forEach(function (span) {
+        span.addEventListener('click', function () {
+          const key = span.getAttribute('data-clear');
+          const sel = document.getElementById('filter-' + key);
+          if (sel) { sel.value = ''; loadProducts(1); }
+        });
+      });
+    }
+
+    function clearAllFilters() {
+      ['filter-category', 'filter-price', 'filter-standard'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      loadProducts(1);
+    }
+
+    async function loadNews(page) {
+      page = page || 1;
+      try {
+        const res = await fetch('/api/news?page=' + page + '&limit=' + NEWS_PER_PAGE);
+        if (res.ok) {
+          const data = await res.json();
+          newsData = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : []);
+          newsTotal = typeof data.total === 'number' ? data.total : newsData.length;
+          newsPage = typeof data.page === 'number' ? data.page : 1;
+          const limit = typeof data.limit === 'number' ? data.limit : NEWS_PER_PAGE;
+          newsTotalPages = Math.max(1, Math.ceil(newsTotal / limit));
+        }
+      } catch (e) {
+        console.warn('News API failed', e);
+        const fallback = [
+          { id: 1, title: "Mùa Thu Hoạch Bơ Sáp 034", image: "https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80", summary: "Những trái bơ sáp 034 đầu tiên đã lên kệ.", date: "03/02/2026" }
+        ];
+        newsData = fallback;
+        newsTotal = fallback.length;
+        newsPage = 1;
+        newsTotalPages = 1;
+      }
       renderNews();
+      renderNewsPagination();
+    }
+
+    function renderProductsPagination() {
+      const el = document.getElementById('product-pagination');
+      if (!el) return;
+      if (productsTotalPages <= 1) {
+        el.innerHTML = '';
+        return;
+      }
+      let html = '';
+      html += '<a href="#" onclick="loadProducts(' + (productsPage - 1) + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700' + (productsPage <= 1 ? ' opacity-50 pointer-events-none' : '') + '"><i class="fas fa-chevron-left"></i></a>';
+      for (let p = 1; p <= productsTotalPages; p++) {
+        const active = p === productsPage ? ' bg-brand-green text-white border-brand-green' : ' border-gray-300 hover:bg-gray-100 text-gray-700';
+        html += '<a href="#" onclick="loadProducts(' + p + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border rounded-lg' + active + '">' + p + '</a>';
+      }
+      html += '<a href="#" onclick="loadProducts(' + (productsPage + 1) + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700' + (productsPage >= productsTotalPages ? ' opacity-50 pointer-events-none' : '') + '"><i class="fas fa-chevron-right"></i></a>';
+      el.innerHTML = html;
+    }
+
+    function renderNewsPagination() {
+      const el = document.getElementById('news-pagination');
+      if (!el) return;
+      if (newsTotalPages <= 1) {
+        el.innerHTML = '';
+        return;
+      }
+      let html = '';
+      html += '<a href="#" onclick="loadNews(' + (newsPage - 1) + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700' + (newsPage <= 1 ? ' opacity-50 pointer-events-none' : '') + '"><i class="fas fa-chevron-left"></i></a>';
+      for (let p = 1; p <= newsTotalPages; p++) {
+        const active = p === newsPage ? ' bg-brand-green text-white border-brand-green' : ' border-gray-300 hover:bg-gray-100 text-gray-700';
+        html += '<a href="#" onclick="loadNews(' + p + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border rounded-lg' + active + '">' + p + '</a>';
+      }
+      html += '<a href="#" onclick="loadNews(' + (newsPage + 1) + '); return false;" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700' + (newsPage >= newsTotalPages ? ' opacity-50 pointer-events-none' : '') + '"><i class="fas fa-chevron-right"></i></a>';
+      el.innerHTML = html;
+    }
+
+    async function loadData() {
+      await Promise.all([loadProducts(1), loadNews(1)]);
     }
 
     // --- State Management ---
@@ -2243,9 +2378,10 @@
     function renderProducts() {
       const container = document.getElementById('product-list');
       if (!container) return;
+      const list = Array.isArray(products) ? products : [];
       const tags = (p) => Array.isArray(p.tags) ? p.tags : [];
 
-      container.innerHTML = products.map(product => `
+      container.innerHTML = list.map(product => `
         <div class="bg-white rounded-xl shadow-sm hover:shadow-xl transition duration-300 group overflow-hidden border border-gray-100">
             <div class="relative h-64 overflow-hidden">
                 ${product.discount ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">${product.discount}</span>` : ''}
@@ -2294,8 +2430,9 @@
     function renderNews() {
       const container = document.getElementById('news-list');
       if (!container) return;
+      const list = Array.isArray(newsData) ? newsData : [];
 
-      container.innerHTML = newsData.map(news => `
+      container.innerHTML = list.map(news => `
         <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
             <div class="h-48 overflow-hidden">
                 <img src="${news.image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500">
@@ -2447,6 +2584,12 @@
       updateLanguageButtons();
       loadData();
       renderCart();
+      ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', function () { loadProducts(1); });
+      });
+      const clearBtn = document.getElementById('clear-filters');
+      if (clearBtn) clearBtn.addEventListener('click', function (e) { e.preventDefault(); clearAllFilters(); });
 
       // Modal Close Event (Click outside)
       const modal = document.getElementById('product-modal');

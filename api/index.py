@@ -70,18 +70,86 @@ async def index():
 
 
 # --- API: Products ---
+def _apply_product_filters(items: list, category: str, price: str, standard: str) -> list:
+    out = items
+    if category:
+        out = [x for x in out if x.get("category") == category]
+    if price == "under50":
+        out = [x for x in out if (x.get("price") or 0) < 50000]
+    elif price == "50-200":
+        out = [x for x in out if 50000 <= (x.get("price") or 0) <= 200000]
+    elif price == "over200":
+        out = [x for x in out if (x.get("price") or 0) > 200000]
+    if standard:
+        tag = standard  # Organic, VietGAP, Handmade
+        out = [x for x in out if tag in (x.get("tags") or [])]
+    return out
+
+
+def _sort_products(items: list, sort: str) -> list:
+    key = (sort or "newest").lower()
+    if key == "bestseller":
+        return sorted(items, key=lambda x: (x.get("reviews") or 0), reverse=True)
+    if key == "price_asc":
+        return sorted(items, key=lambda x: (x.get("price") or 0))
+    if key == "price_desc":
+        return sorted(items, key=lambda x: (x.get("price") or 0), reverse=True)
+    return sorted(items, key=lambda x: x.get("id", 0), reverse=True)
+
+
 @rt("/api/products")
-async def api_products(category: str = None, sort: str = "newest"):
+async def api_products(
+    category: str = None,
+    price: str = None,
+    standard: str = None,
+    sort: str = "newest",
+    page: int = 1,
+    limit: int = 8,
+):
+    page = max(1, page)
+    limit = max(1, min(100, limit))
     async with get_conn() as conn:
         if not conn:
-            return JSONResponse(_mock_products())
-        q = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description FROM products"
-        params = []
+            all_items = _mock_products()
+            all_items = _apply_product_filters(all_items, category, price, standard)
+            total = len(all_items)
+            all_items = _sort_products(all_items, sort)
+            start = (page - 1) * limit
+            items = all_items[start : start + limit]
+            total_pages = max(1, (total + limit - 1) // limit)
+            return JSONResponse({
+                "items": items, "total": total, "page": page, "limit": limit, "totalPages": total_pages,
+            })
+        base = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description FROM products"
+        where, params = [], []
         if category:
-            q += " WHERE category = $1"
+            where.append("category = $" + str(len(params) + 1))
             params.append(category)
-        q += " ORDER BY sort_order, id"
-        rows = await conn.fetch(q, *params)
+        if price == "under50":
+            where.append("price < 50000")
+        elif price == "50-200":
+            where.append("price >= 50000 AND price <= 200000")
+        elif price == "over200":
+            where.append("price > 200000")
+        if standard:
+            where.append("tags @> $" + str(len(params) + 1) + "::jsonb")
+            params.append(json.dumps([standard]))
+        where_sql = " AND ".join(where) if where else "1=1"
+        order_map = {
+            "newest": "ORDER BY id DESC",
+            "bestseller": "ORDER BY reviews DESC NULLS LAST, id DESC",
+            "price_asc": "ORDER BY price ASC, id DESC",
+            "price_desc": "ORDER BY price DESC, id DESC",
+        }
+        order_sql = order_map.get((sort or "newest").lower(), order_map["newest"])
+        count_row = await conn.fetchrow(f"SELECT COUNT(*) as n FROM products WHERE {where_sql}", *params)
+        total = count_row["n"] or 0
+        offset = (page - 1) * limit
+        params.extend([limit, offset])
+        rows = await conn.fetch(
+            f"{base} WHERE {where_sql} {order_sql} LIMIT ${len(params)-1} OFFSET ${len(params)}",
+            *params,
+        )
     out = []
     for r in rows:
         out.append({
@@ -92,7 +160,8 @@ async def api_products(category: str = None, sort: str = "newest"):
             "discount": r["discount"], "tags": r["tags"] or [],
             "description": r["description"] or "",
         })
-    return JSONResponse(out)
+    total_pages = max(1, (total + limit - 1) // limit)
+    return JSONResponse({"items": out, "total": total, "page": page, "limit": limit, "totalPages": total_pages})
 
 
 @rt("/api/products/{id:int}")
@@ -119,14 +188,26 @@ async def api_product_detail(id: int):
 
 # --- API: News ---
 @rt("/api/news")
-async def api_news():
+async def api_news(page: int = 1, limit: int = 6):
+    page = max(1, page)
+    limit = max(1, min(100, limit))
     async with get_conn() as conn:
         if not conn:
-            return JSONResponse(_mock_news())
+            all_items = _mock_news()
+            total = len(all_items)
+            start = (page - 1) * limit
+            items = all_items[start : start + limit]
+            return JSONResponse({"items": items, "total": total, "page": page, "limit": limit})
+        count_row = await conn.fetchrow("SELECT COUNT(*) as n FROM news")
+        total = count_row["n"] or 0
+        offset = (page - 1) * limit
         rows = await conn.fetch(
-            "SELECT id, title, image, summary, date FROM news ORDER BY sort_order, id"
+            "SELECT id, title, image, summary, date FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
+            limit, offset,
         )
-    return JSONResponse([dict(r) for r in rows])
+    items = [dict(r) for r in rows]
+    total_pages = max(1, (total + limit - 1) // limit)
+    return JSONResponse({"items": items, "total": total, "page": page, "limit": limit, "totalPages": total_pages})
 
 
 # --- API: Site (hero, categories, brochures, footer, topbar) ---
@@ -710,8 +791,7 @@ async def admin_site_brochure(req, slug: str):
     return RedirectResponse("/admin/site", status_code=303)
 
 
-# Vercel handler
-handler = app
+# Vercel: chỉ export app (ASGI). Không export handler để tránh runtime coi là BaseHTTPRequestHandler.
 
 if __name__ == "__main__" or os.getenv("VERCEL") != "1":
     serve()
