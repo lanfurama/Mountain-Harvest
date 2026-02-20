@@ -194,8 +194,14 @@ def render_news_detail_html(base_html: str, news: dict, current_url: str) -> str
 async def index(req):
     """Serve frontend index.html with dynamic SEO and content for news."""
     idx = PUBLIC_DIR / "index.html"
-    if not idx.exists():
-        return Div("Mountain Harvest - Add public/index.html")
+    
+    # Try to read file, handle errors gracefully
+    try:
+        if not idx.exists():
+            return Div("Mountain Harvest - Add public/index.html")
+    except Exception:
+        # If exists() check fails, try reading directly
+        pass
     
     # Check for news parameter
     news_id = req.query_params.get("news")
@@ -207,7 +213,11 @@ async def index(req):
                     row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", news_id_int)
                     if row:
                         news = dict(row)
-                        html_content = idx.read_text(encoding='utf-8')
+                        try:
+                            html_content = idx.read_text(encoding='utf-8')
+                        except (FileNotFoundError, OSError):
+                            # If file reading fails, try using FileResponse which FastHTML handles better
+                            return FileResponse(idx)
                         current_url = str(req.url)
                         html_content = render_news_detail_html(html_content, news, current_url)
                         return HTMLResponse(content=html_content)
@@ -215,7 +225,10 @@ async def index(req):
                     # Fallback to mock data
                     for item in _mock_news():
                         if item.get("id") == news_id_int:
-                            html_content = idx.read_text(encoding='utf-8')
+                            try:
+                                html_content = idx.read_text(encoding='utf-8')
+                            except (FileNotFoundError, OSError):
+                                return FileResponse(idx)
                             current_url = str(req.url)
                             html_content = render_news_detail_html(html_content, item, current_url)
                             return HTMLResponse(content=html_content)
@@ -385,15 +398,8 @@ async def api_news_one(id: int):
 @rt("/news/{id:int}")
 async def news_detail_page(req, id: int):
     """Serve news detail page with server-side rendering."""
+    # Use the same logic as route "/" to ensure consistent file access on both local and Vercel
     idx = PUBLIC_DIR / "index.html"
-    
-    # Try to read the file directly, fallback to query param redirect if file not found (for Vercel compatibility)
-    try:
-        html_content = idx.read_text(encoding='utf-8')
-    except (FileNotFoundError, OSError, Exception) as e:
-        # If file reading fails (e.g., on Vercel), fallback to query param redirect
-        # This uses the same route handler as /?news={id} which may have better file access
-        return RedirectResponse("/?news=" + str(id), status_code=302)
     
     try:
         async with get_conn() as conn:
@@ -401,6 +407,11 @@ async def news_detail_page(req, id: int):
                 row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", id)
                 if row:
                     news = dict(row)
+                    try:
+                        html_content = idx.read_text(encoding='utf-8')
+                    except (FileNotFoundError, OSError):
+                        # If file reading fails, fallback to query param redirect
+                        return RedirectResponse("/?news=" + str(id), status_code=302)
                     current_url = str(req.url)
                     html_content = render_news_detail_html(html_content, news, current_url)
                     return HTMLResponse(content=html_content)
@@ -408,6 +419,10 @@ async def news_detail_page(req, id: int):
                 # Fallback to mock data
                 for item in _mock_news():
                     if item.get("id") == id:
+                        try:
+                            html_content = idx.read_text(encoding='utf-8')
+                        except (FileNotFoundError, OSError):
+                            return RedirectResponse("/?news=" + str(id), status_code=302)
                         current_url = str(req.url)
                         html_content = render_news_detail_html(html_content, item, current_url)
                         return HTMLResponse(content=html_content)
