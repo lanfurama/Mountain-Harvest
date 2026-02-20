@@ -73,27 +73,17 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLanguageButtons();
   loadSiteHeader();
   
-  // Check if news detail is already rendered from server
-  // Server renders news detail without 'hidden' class and hides main-shop-content
+  // Check if news detail page is being displayed (server-rendered)
   const newsDetailEl = document.getElementById('news-detail');
   const mainShopContent = document.getElementById('main-shop-content');
-  const isNewsDetailRendered = newsDetailEl && 
+  const isNewsDetailPage = newsDetailEl && 
     (!newsDetailEl.classList.contains('hidden')) &&
     (mainShopContent && window.getComputedStyle(mainShopContent).display === 'none');
   
-  const params = new URLSearchParams(window.location.search);
-  const newsId = params.get('news');
-  
-  if (newsId && !isNewsDetailRendered) {
-    // Only load via JS if not already rendered from server
-    loadProducts(1);
-    loadNews(1);
-    loadNewsDetail(newsId);
-  } else if (!newsId && !isNewsDetailRendered) {
-    // Load normal homepage data
+  // Only load homepage data if not on news detail page
+  if (!isNewsDetailPage) {
     loadData();
   }
-  // If news detail is already rendered from server, don't load anything
   
   renderCart();
   ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {

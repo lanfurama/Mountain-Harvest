@@ -383,8 +383,36 @@ async def api_news_one(id: int):
 
 
 @rt("/news/{id:int}")
-async def news_detail_redirect(id: int):
-    return RedirectResponse("/?news=" + str(id), status_code=302)
+async def news_detail_page(req, id: int):
+    """Serve news detail page with server-side rendering."""
+    idx = PUBLIC_DIR / "index.html"
+    if not idx.exists():
+        return Div("Mountain Harvest - Add public/index.html")
+    
+    try:
+        async with get_conn() as conn:
+            if conn:
+                row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", id)
+                if row:
+                    news = dict(row)
+                    html_content = idx.read_text(encoding='utf-8')
+                    current_url = str(req.url)
+                    html_content = render_news_detail_html(html_content, news, current_url)
+                    return HTMLResponse(content=html_content)
+            else:
+                # Fallback to mock data
+                for item in _mock_news():
+                    if item.get("id") == id:
+                        html_content = idx.read_text(encoding='utf-8')
+                        current_url = str(req.url)
+                        html_content = render_news_detail_html(html_content, item, current_url)
+                        return HTMLResponse(content=html_content)
+    except (ValueError, Exception) as e:
+        # If news ID is invalid or error occurs, redirect to homepage
+        return RedirectResponse("/", status_code=302)
+    
+    # News not found, redirect to homepage
+    return RedirectResponse("/", status_code=302)
 
 
 # --- API: Site (hero, categories, brochures, footer, topbar) ---
