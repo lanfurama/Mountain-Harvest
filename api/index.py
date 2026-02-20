@@ -56,6 +56,19 @@ async def serve_components(filename: str):
     return JSONResponse({"error": "Not found"}, status_code=404)
 
 
+# News detail page route - MUST be defined before root route to ensure it's matched first
+@rt("/news/{id:int}")
+async def news_detail_page(req, id: int):
+    """Serve news detail page - Server-side rendered."""
+    # Ensure this route is matched and not served as static file
+    response = await NewsController.render_news_page(req, id)
+    # Add header to indicate server-side rendering
+    if hasattr(response, 'headers'):
+        response.headers['X-Server-Rendered'] = 'true'
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
+
+
 # Frontend routes
 @rt("/")
 async def index(req):
@@ -111,12 +124,6 @@ async def api_news(page: int = 1, limit: int = 6):
 async def api_news_one(id: int):
     """Get news detail API."""
     return await NewsController.get_news_detail(id)
-
-
-@rt("/news/{id:int}")
-async def news_detail_page(req, id: int):
-    """Serve news detail page."""
-    return await NewsController.render_news_page(req, id)
 
 
 @rt("/api/site")
