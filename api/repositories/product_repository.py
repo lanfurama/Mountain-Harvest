@@ -22,7 +22,7 @@ class ProductRepository:
             if not conn:
                 return [], 0
             
-            base = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description FROM products"
+            base = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM products"
             where, params = [], []
             
             if category:
@@ -68,7 +68,7 @@ class ProductRepository:
             if not conn:
                 return None
             row = await conn.fetchrow(
-                "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description FROM products WHERE id = $1",
+                "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM products WHERE id = $1",
                 id,
             )
             if not row:
@@ -132,13 +132,19 @@ class ProductRepository:
         category: str,
         price: int,
         image: Optional[str] = None,
+        meta_title: Optional[str] = None,
+        meta_description: Optional[str] = None,
+        h1_custom: Optional[str] = None,
+        h2_custom: Optional[str] = None,
+        h3_custom: Optional[str] = None,
     ) -> None:
         """Create a new product."""
         async with get_conn() as conn:
             if conn:
                 await conn.execute(
-                    "INSERT INTO products (name, category, price, image) VALUES ($1, $2, $3, $4)",
+                    "INSERT INTO products (name, category, price, image, meta_title, meta_description, h1_custom, h2_custom, h3_custom) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                     name, category, price, image or None,
+                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
                 )
     
     @staticmethod
@@ -152,17 +158,24 @@ class ProductRepository:
         image: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        meta_title: Optional[str] = None,
+        meta_description: Optional[str] = None,
+        h1_custom: Optional[str] = None,
+        h2_custom: Optional[str] = None,
+        h3_custom: Optional[str] = None,
     ) -> None:
         """Update a product."""
         async with get_conn() as conn:
             if conn:
                 await conn.execute("""
-                    UPDATE products SET name=$1, category=$2, price=$3, original_price=$4, unit=$5, image=$6, description=$7, tags=$8
-                    WHERE id=$9
+                    UPDATE products SET name=$1, category=$2, price=$3, original_price=$4, unit=$5, image=$6, description=$7, tags=$8, meta_title=$9, meta_description=$10, h1_custom=$11, h2_custom=$12, h3_custom=$13
+                    WHERE id=$14
                 """, name, category, price,
                     original_price,
                     unit or None, image or None, description or None,
-                    json.dumps(tags or []), id,
+                    json.dumps(tags or []),
+                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
+                    id,
                 )
     
     @staticmethod

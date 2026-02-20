@@ -1,5 +1,6 @@
 """Admin controller."""
 import json
+import re
 from datetime import datetime
 from starlette.responses import RedirectResponse
 from fasthtml.common import *
@@ -89,6 +90,16 @@ class AdminController:
                 Div(Label("Giá (VNĐ)", cls="block text-sm font-medium mb-1"), Input(name="price", type="number", cls="w-full border rounded px-2 py-1", required=True)),
                 Div(Label("Ảnh URL", cls="block text-sm font-medium mb-1"), Input(name="image", type="url", cls="w-full border rounded px-2 py-1")),
             ),
+            Div(cls="border-t pt-4 mt-4")(
+                H3("SEO Settings", cls="text-lg font-bold mb-3 text-gray-800"),
+                Div(Label("Meta Title", cls="block text-sm font-medium mb-1"), Input(name="meta_title", placeholder="SEO title", cls="w-full border rounded px-2 py-1")),
+                Div(Label("Meta Description", cls="block text-sm font-medium mb-1"), Textarea(name="meta_description", placeholder="SEO description", cls="w-full border rounded px-2 py-1", rows=2)),
+                Div(cls="grid grid-cols-3 gap-3")(
+                    Div(Label("H1 Custom", cls="block text-sm font-medium mb-1"), Input(name="h1_custom", placeholder="H1", cls="w-full border rounded px-2 py-1")),
+                    Div(Label("H2 Custom", cls="block text-sm font-medium mb-1"), Input(name="h2_custom", placeholder="H2", cls="w-full border rounded px-2 py-1")),
+                    Div(Label("H3 Custom", cls="block text-sm font-medium mb-1"), Input(name="h3_custom", placeholder="H3", cls="w-full border rounded px-2 py-1")),
+                ),
+            ),
             Button("Thêm", type="submit", cls="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"),
         )
         
@@ -145,6 +156,11 @@ class AdminController:
             category=form.get("category", ""),
             price=int(form.get("price", 0) or 0),
             image=form.get("image") or None,
+            meta_title=form.get("meta_title") or None,
+            meta_description=form.get("meta_description") or None,
+            h1_custom=form.get("h1_custom") or None,
+            h2_custom=form.get("h2_custom") or None,
+            h3_custom=form.get("h3_custom") or None,
         )
         return RedirectResponse("/admin/products", status_code=303)
     
@@ -170,6 +186,16 @@ class AdminController:
             Div(Label("Ảnh URL"), Input(name="image", type="url", value=r["image"] or "", cls="w-full border rounded px-2 py-1")),
             Div(Label("Mô tả"), Textarea(name="description", cls="w-full border rounded px-2 py-1", rows=4)(r["description"] or "")),
             Div(Label("Tags (phân cách bởi dấu phẩy)"), Input(name="tags", value=tags_str, cls="w-full border rounded px-2 py-1")),
+            Div(cls="border-t pt-4 mt-4")(
+                H3("SEO Settings", cls="text-lg font-bold mb-3 text-gray-800"),
+                Div(Label("Meta Title", cls="block text-sm font-medium mb-1"), Input(name="meta_title", value=r.get("meta_title") or "", placeholder="SEO title", cls="w-full border rounded px-2 py-1")),
+                Div(Label("Meta Description", cls="block text-sm font-medium mb-1"), Textarea(name="meta_description", value=r.get("meta_description") or "", placeholder="SEO description", cls="w-full border rounded px-2 py-1", rows=2)),
+                Div(cls="grid grid-cols-3 gap-3")(
+                    Div(Label("H1 Custom", cls="block text-sm font-medium mb-1"), Input(name="h1_custom", value=r.get("h1_custom") or "", placeholder="H1", cls="w-full border rounded px-2 py-1")),
+                    Div(Label("H2 Custom", cls="block text-sm font-medium mb-1"), Input(name="h2_custom", value=r.get("h2_custom") or "", placeholder="H2", cls="w-full border rounded px-2 py-1")),
+                    Div(Label("H3 Custom", cls="block text-sm font-medium mb-1"), Input(name="h3_custom", value=r.get("h3_custom") or "", placeholder="H3", cls="w-full border rounded px-2 py-1")),
+                ),
+            ),
             Button("Lưu", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded"),
         )
         return AdminViews.layout(req, "Sửa sản phẩm", Div(H1("Sửa sản phẩm", cls="text-2xl font-bold mb-4"), f))
@@ -192,6 +218,11 @@ class AdminController:
             image=form.get("image") or None,
             description=form.get("description") or None,
             tags=tags,
+            meta_title=form.get("meta_title") or None,
+            meta_description=form.get("meta_description") or None,
+            h1_custom=form.get("h1_custom") or None,
+            h2_custom=form.get("h2_custom") or None,
+            h3_custom=form.get("h3_custom") or None,
         )
         return RedirectResponse("/admin/products", status_code=303)
     
@@ -289,12 +320,25 @@ class AdminController:
                     date_value = date_obj.strftime("%d/%m/%Y")
                 except:
                     pass
+            title = form.get("title")
+            content = form.get("content") or ""
+            # Auto-generate meta_title from title
+            meta_title = title
+            # Auto-generate meta_description from first 100 chars of content (strip HTML)
+            content_text = re.sub(r'<[^>]+>', '', content).strip()
+            meta_description = content_text[:100] if content_text else None
+            
             await NewsRepository.create(
-                title=form.get("title"),
+                title=title,
                 image=form.get("image") or None,
-                content=form.get("content") or None,
+                content=content,
                 author=form.get("author") or "Mountain Harvest",
                 date=date_value,
+                meta_title=meta_title,
+                meta_description=meta_description,
+                h1_custom=None,
+                h2_custom=None,
+                h3_custom=None,
             )
             return RedirectResponse("/admin/news", status_code=303)
         
@@ -395,13 +439,26 @@ class AdminController:
                 date_value = date_obj.strftime("%d/%m/%Y")
             except:
                 pass
+        title = form.get("title")
+        content = form.get("content") or ""
+        # Auto-generate meta_title from title
+        meta_title = title
+        # Auto-generate meta_description from first 100 chars of content (strip HTML)
+        content_text = re.sub(r'<[^>]+>', '', content).strip()
+        meta_description = content_text[:100] if content_text else None
+        
         await NewsRepository.update(
             id=id,
-            title=form.get("title"),
+            title=title,
             date=date_value or None,
             image=form.get("image") or None,
-            content=form.get("content") or None,
+            content=content,
             author=form.get("author") or None,
+            meta_title=meta_title,
+            meta_description=meta_description,
+            h1_custom=None,
+            h2_custom=None,
+            h3_custom=None,
         )
         return RedirectResponse("/admin/news", status_code=303)
     

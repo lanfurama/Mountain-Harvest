@@ -15,6 +15,33 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Mountain Harvest",
+    "url": "https://mountainharvest.vn",
+    "logo": "https://mountainharvest.vn/logo.png",
+    "description": "Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "123 Đường Mây Núi",
+      "addressLocality": "Đà Lạt",
+      "addressCountry": "VN"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+84-1900-1234",
+      "contactType": "customer service",
+      "email": "cskh@mountainharvest.vn"
+    },
+    "sameAs": [
+      "https://www.facebook.com/mountainharvest",
+      "https://www.tiktok.com/@mountainharvest",
+      "https://www.youtube.com/@mountainharvest"
+    ]
+  }
+  </script>
   <script>
     tailwind.config = {
       theme: {
@@ -64,7 +91,7 @@
         <div class="flex-shrink-0 flex items-center cursor-pointer min-w-fit" onclick="window.location.href='/'">
           <i id="site-icon" class="fas fa-mountain text-brand-green text-3xl mr-2"></i>
           <div class="hidden sm:block">
-            <h1 id="site-name" class="text-xl md:text-2xl font-bold text-brand-green tracking-wide">Mountain Harvest</h1>
+            <div id="site-name" class="text-xl md:text-2xl font-bold text-brand-green tracking-wide">Mountain Harvest</div>
             <span id="site-tagline" class="text-[10px] text-brand-brown tracking-widest uppercase block text-center">Nature's Best</span>
           </div>
         </div>

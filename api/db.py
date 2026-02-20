@@ -152,3 +152,53 @@ async def init_db():
                 ('Mùa Thu Hoạch Bơ Sáp 034 Đã Bắt Đầu', 'https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', '<p>Những trái bơ sáp 034 dẻo, béo ngậy đầu tiên của mùa vụ năm nay đã chính thức lên kệ tại Mountain Harvest.</p>', 'Admin', '03/02/2026', 1),
                 ('Bí Quyết Giữ Rau Củ Tươi Lâu Trong Tủ Lạnh', 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', '<p>Chia sẻ những mẹo vặt đơn giản nhưng hiệu quả để bảo quản rau củ quả luôn tươi ngon suốt cả tuần.</p>', 'Admin', '01/02/2026', 2)
             """)
+        
+        # Add SEO columns to news table if not exist
+        try:
+            await conn.execute("""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='meta_title') THEN
+                        ALTER TABLE news ADD COLUMN meta_title VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='meta_description') THEN
+                        ALTER TABLE news ADD COLUMN meta_description TEXT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='h1_custom') THEN
+                        ALTER TABLE news ADD COLUMN h1_custom VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='h2_custom') THEN
+                        ALTER TABLE news ADD COLUMN h2_custom VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='h3_custom') THEN
+                        ALTER TABLE news ADD COLUMN h3_custom VARCHAR(255);
+                    END IF;
+                END $$;
+            """)
+        except Exception:
+            pass  # Columns might already exist
+        
+        # Add SEO columns to products table if not exist
+        try:
+            await conn.execute("""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='meta_title') THEN
+                        ALTER TABLE products ADD COLUMN meta_title VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='meta_description') THEN
+                        ALTER TABLE products ADD COLUMN meta_description TEXT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='h1_custom') THEN
+                        ALTER TABLE products ADD COLUMN h1_custom VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='h2_custom') THEN
+                        ALTER TABLE products ADD COLUMN h2_custom VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='h3_custom') THEN
+                        ALTER TABLE products ADD COLUMN h3_custom VARCHAR(255);
+                    END IF;
+                END $$;
+            """)
+        except Exception:
+            pass  # Columns might already exist

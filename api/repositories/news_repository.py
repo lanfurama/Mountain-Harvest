@@ -19,7 +19,7 @@ class NewsRepository:
             
             offset = (page - 1) * limit
             rows = await conn.fetch(
-                "SELECT id, title, image, content, author, date FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
+                "SELECT id, title, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
                 limit, offset,
             )
             
@@ -32,7 +32,7 @@ class NewsRepository:
         async with get_conn() as conn:
             if not conn:
                 return None
-            row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", id)
+            row = await conn.fetchrow("SELECT id, title, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM news WHERE id = $1", id)
             if not row:
                 return None
             return News.from_db_row(row)
@@ -73,13 +73,19 @@ class NewsRepository:
         content: Optional[str] = None,
         author: Optional[str] = None,
         date: Optional[str] = None,
+        meta_title: Optional[str] = None,
+        meta_description: Optional[str] = None,
+        h1_custom: Optional[str] = None,
+        h2_custom: Optional[str] = None,
+        h3_custom: Optional[str] = None,
     ) -> None:
         """Create a new news item."""
         async with get_conn() as conn:
             if conn:
                 await conn.execute(
-                    "INSERT INTO news (title, image, content, author, date) VALUES ($1, $2, $3, $4, $5)",
+                    "INSERT INTO news (title, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
                     title, image or None, content or None, author or "Mountain Harvest", date,
+                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
                 )
     
     @staticmethod
@@ -90,13 +96,19 @@ class NewsRepository:
         image: Optional[str] = None,
         content: Optional[str] = None,
         author: Optional[str] = None,
+        meta_title: Optional[str] = None,
+        meta_description: Optional[str] = None,
+        h1_custom: Optional[str] = None,
+        h2_custom: Optional[str] = None,
+        h3_custom: Optional[str] = None,
     ) -> None:
         """Update a news item."""
         async with get_conn() as conn:
             if conn:
                 await conn.execute(
-                    "UPDATE news SET title=$1, date=$2, image=$3, content=$4, author=$5 WHERE id=$6",
-                    title, date or None, image or None, content or None, author or None, id,
+                    "UPDATE news SET title=$1, date=$2, image=$3, content=$4, author=$5, meta_title=$6, meta_description=$7, h1_custom=$8, h2_custom=$9, h3_custom=$10 WHERE id=$11",
+                    title, date or None, image or None, content or None, author or None,
+                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None, id,
                 )
     
     @staticmethod

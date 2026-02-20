@@ -245,6 +245,49 @@ function openProductModal(id) {
     </div>
 `;
 
+  // Add Product structured data (JSON-LD)
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "description": product.description || product.name,
+    "image": product.image || "",
+    "category": product.category,
+    "brand": {
+      "@type": "Brand",
+      "name": "Mountain Harvest"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": product.price,
+      "priceCurrency": "VND",
+      "availability": "https://schema.org/InStock"
+    },
+    "aggregateRating": product.rating > 0 ? {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating,
+      "reviewCount": product.reviews || 0
+    } : undefined
+  };
+  
+  // Remove undefined fields
+  if (!productSchema.aggregateRating) {
+    delete productSchema.aggregateRating;
+  }
+  
+  // Remove existing product schema if any
+  const existingSchema = document.querySelector('script[data-product-schema]');
+  if (existingSchema) {
+    existingSchema.remove();
+  }
+  
+  // Add new schema
+  const schemaScript = document.createElement('script');
+  schemaScript.type = 'application/ld+json';
+  schemaScript.setAttribute('data-product-schema', 'true');
+  schemaScript.textContent = JSON.stringify(productSchema);
+  document.head.appendChild(schemaScript);
+
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
 }

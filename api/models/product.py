@@ -21,6 +21,11 @@ class Product:
         tags: Optional[List[str]] = None,
         description: Optional[str] = None,
         sort_order: int = 0,
+        meta_title: Optional[str] = None,
+        meta_description: Optional[str] = None,
+        h1_custom: Optional[str] = None,
+        h2_custom: Optional[str] = None,
+        h3_custom: Optional[str] = None,
     ):
         self.id = id
         self.name = name
@@ -36,6 +41,11 @@ class Product:
         self.tags = tags or []
         self.description = description
         self.sort_order = sort_order
+        self.meta_title = meta_title
+        self.meta_description = meta_description
+        self.h1_custom = h1_custom
+        self.h2_custom = h2_custom
+        self.h3_custom = h3_custom
     
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON response."""
@@ -53,6 +63,11 @@ class Product:
             "discount": self.discount,
             "tags": self.tags or [],
             "description": self.description or "",
+            "meta_title": self.meta_title,
+            "meta_description": self.meta_description,
+            "h1_custom": self.h1_custom,
+            "h2_custom": self.h2_custom,
+            "h3_custom": self.h3_custom,
         }
     
     @classmethod
@@ -73,4 +88,9 @@ class Product:
             tags=row.get("tags") or [],
             description=row.get("description"),
             sort_order=row.get("sort_order", 0),
+            meta_title=row.get("meta_title"),
+            meta_description=row.get("meta_description"),
+            h1_custom=row.get("h1_custom"),
+            h2_custom=row.get("h2_custom"),
+            h3_custom=row.get("h3_custom"),
         )

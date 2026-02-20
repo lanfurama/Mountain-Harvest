@@ -11,6 +11,8 @@ class NewsViews:
     def render_detail(base_html: str, news: dict, current_url: str) -> str:
         """Render HTML with news detail content."""
         title = escape(news.get("title", "Mountain Harvest"))
+        meta_title = escape(news.get("meta_title") or title)
+        h1_custom = escape(news.get("h1_custom") or title)
         image = news.get("image", "") or ""
         # Ensure image is absolute URL
         if image and not image.startswith(("http://", "https://")):
@@ -26,27 +28,37 @@ class NewsViews:
         author = escape(news.get("author", ""))
         date = escape(news.get("date", ""))
         
-        # Extract description from content
-        description = re.sub(r'<[^>]+>', '', content)
-        description = description.strip()[:160] if description.strip() else "Tin tức từ Mountain Harvest"
-        description_escaped = escape(description)
+        # Use meta_description if available, otherwise extract from content
+        meta_description = news.get("meta_description")
+        if meta_description:
+            description_escaped = escape(meta_description)
+        else:
+            description = re.sub(r'<[^>]+>', '', content)
+            description = description.strip()[:160] if description.strip() else "Tin tức từ Mountain Harvest"
+            description_escaped = escape(description)
         
-        # Update title
-        base_html = re.sub(r'<title>.*?</title>', f'<title>{title} - Mountain Harvest</title>', base_html, flags=re.IGNORECASE | re.DOTALL)
+        # Update title with meta_title
+        page_title = f"{meta_title} - Mountain Harvest" if meta_title != title else f"{title} - Mountain Harvest"
+        base_html = re.sub(r'<title>.*?</title>', f'<title>{page_title}</title>', base_html, flags=re.IGNORECASE | re.DOTALL)
         
         # Update or add meta tags - use more flexible regex that matches any content value
         meta_tags_to_update = [
             ('name', 'description', description_escaped),
-            ('property', 'og:title', title),
+            ('property', 'og:title', meta_title),
             ('property', 'og:description', description_escaped),
-            ('property', 'og:image', image),
             ('property', 'og:url', current_url),
             ('property', 'og:type', 'article'),
-            ('name', 'twitter:title', title),
+            ('name', 'twitter:title', meta_title),
             ('name', 'twitter:description', description_escaped),
-            ('name', 'twitter:image', image),
             ('name', 'twitter:card', 'summary_large_image'),
         ]
+        
+        # Add og:image and twitter:image only if cover image exists
+        if image:
+            meta_tags_to_update.extend([
+                ('property', 'og:image', image),
+                ('name', 'twitter:image', image),
+            ])
         
         for attr_type, attr_name, attr_value in meta_tags_to_update:
             # Pattern to match existing meta tag (matches any content value including empty)
@@ -69,6 +81,32 @@ class NewsViews:
         hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
         base_html = base_html.replace('</head>', hide_style + '\n</head>')
         
+        # Add Article structured data (JSON-LD)
+        article_schema = {
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": h1_custom,
+            "description": description_escaped,
+            "image": image if image else "",
+            "datePublished": date if date else "",
+            "author": {
+                "@type": "Person",
+                "name": author if author else "Mountain Harvest"
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Mountain Harvest",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": ""
+                }
+            }
+        }
+        import json
+        schema_json = json.dumps(article_schema, ensure_ascii=False, indent=2)
+        schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>'
+        base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
+        
         # Render news detail content (without hidden class)
         news_detail_html = f'''<article id="news-detail" class="w-full">
       <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
@@ -80,7 +118,7 @@ class NewsViews:
         </a>
         {f'<span class="text-sm text-gray-500 block mb-2">{date}</span>' if date else ''}
         {f'<span class="text-sm text-gray-500 block mb-4">Tác giả: {author}</span>' if author else ''}
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{title}</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{h1_custom}</h1>
         <div class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none">{content}</div>
       </div>
     </article>'''
