@@ -1589,10 +1589,10 @@
 
         <!-- Logo -->
         <div class="flex-shrink-0 flex items-center cursor-pointer min-w-fit" onclick="window.scrollTo(0,0)">
-          <i class="fas fa-mountain text-brand-green text-3xl mr-2"></i>
+          <i id="site-icon" class="fas fa-mountain text-brand-green text-3xl mr-2"></i>
           <div class="hidden sm:block">
-            <h1 class="text-xl md:text-2xl font-bold text-brand-green tracking-wide">Mountain Harvest</h1>
-            <span class="text-[10px] text-brand-brown tracking-widest uppercase block text-center">Nature's Best</span>
+            <h1 id="site-name" class="text-xl md:text-2xl font-bold text-brand-green tracking-wide">Mountain Harvest</h1>
+            <span id="site-tagline" class="text-[10px] text-brand-brown tracking-widest uppercase block text-center">Nature's Best</span>
           </div>
         </div>
 
@@ -1716,7 +1716,8 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="shop">
+  <main id="main-content">
+    <div id="main-shop-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     <!-- ADVANCED SEARCH / FILTER BAR -->
     <section class="mb-12">
@@ -1875,6 +1876,23 @@
       </div>
     </section>
 
+    </div><!-- /#main-shop-content -->
+
+    <!-- Blog post (full-width, chỉ hiện khi ?news=id) -->
+    <article id="news-detail" class="hidden w-full">
+      <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
+        <img id="news-detail-image" src="" alt="" class="w-full h-full object-cover">
+      </div>
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <a href="/" id="news-detail-back" class="inline-flex items-center gap-2 text-brand-green font-bold hover:underline mb-6">
+          <i class="fas fa-arrow-left"></i> Quay lại tin tức
+        </a>
+        <span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>
+        <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight"></h1>
+        <div id="news-detail-summary" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none"></div>
+      </div>
+    </article>
+
   </main>
 
   <!-- Footer (Giữ nguyên nhưng tinh chỉnh nhẹ) -->
@@ -1884,8 +1902,8 @@
         <!-- Col 1 -->
         <div>
           <div class="flex items-center mb-4">
-            <i class="fas fa-mountain text-2xl mr-2"></i>
-            <span class="text-2xl font-bold font-serif">Mountain Harvest</span>
+            <i id="site-icon-footer" class="fas fa-mountain text-2xl mr-2"></i>
+            <span id="site-name-footer" class="text-2xl font-bold font-serif">Mountain Harvest</span>
           </div>
           <p class="text-green-100 text-sm leading-relaxed mb-4">
             Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.
@@ -2332,8 +2350,60 @@
       });
     }
 
+    async function loadNewsDetail(id) {
+      const shopWrap = document.getElementById('main-shop-content');
+      const detailEl = document.getElementById('news-detail');
+      if (!detailEl || !shopWrap) return;
+      try {
+        const res = await fetch('/api/news/' + id);
+        if (!res.ok) { showNewsList(); return; }
+        const news = await res.json();
+        if (news.error) { showNewsList(); return; }
+        document.getElementById('news-detail-image').src = news.image || '';
+        document.getElementById('news-detail-image').alt = news.title || '';
+        document.getElementById('news-detail-date').textContent = news.date ? news.date : '';
+        document.getElementById('news-detail-title').textContent = news.title || '';
+        var summaryEl = document.getElementById('news-detail-summary');
+        if (summaryEl) summaryEl.textContent = news.summary || '';
+        shopWrap.classList.add('hidden');
+        detailEl.classList.remove('hidden');
+      } catch (e) {
+        console.warn('News detail failed', e);
+        showNewsList();
+      }
+    }
+
+    function showNewsList() {
+      const shopWrap = document.getElementById('main-shop-content');
+      const detailEl = document.getElementById('news-detail');
+      if (shopWrap) shopWrap.classList.remove('hidden');
+      if (detailEl) detailEl.classList.add('hidden');
+    }
+
     async function loadData() {
       await Promise.all([loadProducts(1), loadNews(1)]);
+    }
+
+    async function loadSiteHeader() {
+      try {
+        const res = await fetch('/api/site');
+        if (!res.ok) return;
+        const data = await res.json();
+        const brand = data.brand || data.header || {};
+        const name = brand.siteName || '';
+        const tagline = brand.tagline || '';
+        const iconClass = (brand.icon || 'fas fa-mountain').trim();
+        const nameEl = document.getElementById('site-name');
+        const taglineEl = document.getElementById('site-tagline');
+        const iconEl = document.getElementById('site-icon');
+        const nameFooterEl = document.getElementById('site-name-footer');
+        const iconFooterEl = document.getElementById('site-icon-footer');
+        if (nameEl && name) nameEl.textContent = name;
+        if (taglineEl && tagline) taglineEl.textContent = tagline;
+        if (iconEl) iconEl.className = iconClass + ' text-brand-green text-3xl mr-2';
+        if (nameFooterEl && name) nameFooterEl.textContent = name;
+        if (iconFooterEl) iconFooterEl.className = iconClass + ' text-2xl mr-2';
+      } catch (e) { /* ignore */ }
     }
 
     // --- State Management ---
@@ -2439,7 +2509,7 @@
                 <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date}</span>
                 <h3 class="font-bold text-lg mb-2 hover:text-brand-green cursor-pointer">${news.title}</h3>
                 <p class="text-gray-600 text-sm mb-4 line-clamp-3">${news.summary}</p>
-                <button class="text-brand-green font-bold text-sm hover:underline">Đọc tiếp <i class="fas fa-arrow-right text-xs"></i></button>
+                <a href="/news/${news.id}" class="text-brand-green font-bold text-sm hover:underline">Đọc tiếp <i class="fas fa-arrow-right text-xs"></i></a>
             </div>
         </div>
     `).join('');
@@ -2580,7 +2650,16 @@
     document.addEventListener('DOMContentLoaded', () => {
       applyLanguage();
       updateLanguageButtons();
-      loadData();
+      loadSiteHeader();
+      const params = new URLSearchParams(window.location.search);
+      const newsId = params.get('news');
+      if (newsId) {
+        loadProducts(1);
+        loadNews(1);
+        loadNewsDetail(newsId);
+      } else {
+        loadData();
+      }
       renderCart();
       ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {
         const el = document.getElementById(id);

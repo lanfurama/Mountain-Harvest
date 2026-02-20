@@ -210,6 +210,25 @@ async def api_news(page: int = 1, limit: int = 6):
     return JSONResponse({"items": items, "total": total, "page": page, "limit": limit, "totalPages": total_pages})
 
 
+@rt("/api/news/{id:int}")
+async def api_news_one(id: int):
+    async with get_conn() as conn:
+        if not conn:
+            for item in _mock_news():
+                if item.get("id") == id:
+                    return JSONResponse(item)
+            return JSONResponse({"error": "Not found"}, status_code=404)
+        row = await conn.fetchrow("SELECT id, title, image, summary, date FROM news WHERE id = $1", id)
+    if not row:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    return JSONResponse(dict(row))
+
+
+@rt("/news/{id:int}")
+async def news_detail_redirect(id: int):
+    return RedirectResponse("/?news=" + str(id), status_code=302)
+
+
 # --- API: Site (hero, categories, brochures, footer, topbar) ---
 @rt("/api/site")
 async def api_site():
@@ -218,10 +237,18 @@ async def api_site():
             return JSONResponse(_mock_site())
         hero_row = await conn.fetchrow("SELECT promo, title, subtitle, image, button_text FROM hero LIMIT 1")
         brochures = await conn.fetch(
-            "SELECT slug, title, desc, image, button_text FROM category_brochures ORDER BY id"
+            'SELECT slug, title, "desc", image, button_text FROM category_brochures ORDER BY id'
         )
         config_rows = await conn.fetch("SELECT key, value FROM site_config")
         cats = await conn.fetch("SELECT name FROM categories ORDER BY sort_order, id")
+    def _cfg(k):
+        v = config.get(k)
+        if v is None: return {}
+        if isinstance(v, dict): return v
+        if isinstance(v, str):
+            try: return json.loads(v)
+            except (json.JSONDecodeError, TypeError): return {}
+        return {}
     hero = dict(hero_row) if hero_row else {}
     config = {r["key"]: r["value"] for r in config_rows}
     return JSONResponse({
@@ -237,8 +264,10 @@ async def api_site():
             {"slug": r["slug"], "title": r["title"], "desc": r["desc"], "image": r["image"], "buttonText": r["button_text"]}
             for r in brochures
         ],
-        "topbar": config.get("topbar", {}),
-        "footer": config.get("footer", {}),
+        "brand": _cfg("brand"),
+        "header": _cfg("brand") or _cfg("header"),
+        "topbar": _cfg("topbar"),
+        "footer": _cfg("footer"),
     })
 
 
@@ -722,9 +751,29 @@ async def admin_site(req):
             return admin_layout(req, "Site Config", P("Kết nối database để sửa cấu hình.", cls="text-amber-600"))
         brochures = await conn.fetch("SELECT * FROM category_brochures ORDER BY id")
         config = {r["key"]: r["value"] for r in await conn.fetch("SELECT key, value FROM site_config")}
-    topbar = config.get("topbar") or {}
-    footer = config.get("footer") or {}
+    def _as_dict(v):
+        if v is None: return {}
+        if isinstance(v, dict): return v
+        if isinstance(v, str):
+            try: return json.loads(v)
+            except (json.JSONDecodeError, TypeError): return {}
+        return {}
+    brand = _as_dict(config.get("brand"))
+    if not brand and _as_dict(config.get("header")):
+        brand = {**_as_dict(config.get("header")), "icon": "fas fa-mountain"}
+    if not brand.get("icon"):
+        brand = {**brand, "icon": "fas fa-mountain"}
+    topbar = _as_dict(config.get("topbar"))
+    footer = _as_dict(config.get("footer"))
     forms = []
+    forms.append(Div(cls="mb-8")(H2("Thương hiệu (dùng chung Header & Footer)", cls="text-lg font-bold mb-2"),
+        P("Tên app và icon hiển thị ở nav và footer.", cls="text-gray-600 text-sm mb-2"),
+        Form(method="post", action="/admin/site/brand", cls="space-y-2")(
+            Div(Label("Tên app"), Input(name="siteName", value=brand.get("siteName", ""), cls="w-full border rounded px-2 py-1")),
+            Div(Label("Tagline"), Input(name="tagline", value=brand.get("tagline", ""), cls="w-full border rounded px-2 py-1")),
+            Div(Label("Icon (Font Awesome class, VD: fas fa-mountain)"), Input(name="icon", value=brand.get("icon", "fas fa-mountain"), cls="w-full border rounded px-2 py-1")),
+            Button("Lưu Thương hiệu", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded"),
+        )))
     forms.append(Div(cls="mb-8")(H2("Topbar", cls="text-lg font-bold mb-2"),
         Form(method="post", action="/admin/site/topbar", cls="space-y-2")(
             Div(Label("Free shipping text"), Input(name="freeShipping", value=topbar.get("freeShipping", ""), cls="w-full border rounded px-2 py-1")),
@@ -736,6 +785,8 @@ async def admin_site(req):
             Div(Label("Địa chỉ"), Input(name="address", value=footer.get("address", ""), cls="w-full border rounded px-2 py-1")),
             Div(Label("Điện thoại"), Input(name="phone", value=footer.get("phone", ""), cls="w-full border rounded px-2 py-1")),
             Div(Label("Email"), Input(name="email", value=footer.get("email", ""), cls="w-full border rounded px-2 py-1")),
+            Div(Label("Mô tả công ty"), Input(name="description", value=footer.get("description", ""), cls="w-full border rounded px-2 py-1")),
+            Div(Label("Copyright"), Input(name="copyright", value=footer.get("copyright", ""), cls="w-full border rounded px-2 py-1")),
             Button("Lưu Footer", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded"),
         )))
     for b in brochures:
@@ -748,6 +799,23 @@ async def admin_site(req):
                 Button("Lưu", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded"),
             )))
     return admin_layout(req, "Site Config", Div(H1("Cấu hình site", cls="text-2xl font-bold mb-4"), *forms))
+
+
+@rt("/admin/site/brand")
+async def admin_site_brand(req):
+    if req.method != "POST":
+        return RedirectResponse("/admin/site")
+    form = await req.form()
+    async with get_conn() as conn:
+        if conn:
+            row = await conn.fetchrow("SELECT value FROM site_config WHERE key='brand'")
+            existing = row["value"] if row and row["value"] is not None else {}
+            if not isinstance(existing, dict):
+                existing = json.loads(existing) if isinstance(existing, str) else {}
+            existing = dict(existing)
+            existing.update({"siteName": form.get("siteName", ""), "tagline": form.get("tagline", ""), "icon": form.get("icon", "fas fa-mountain")})
+            await conn.execute("INSERT INTO site_config (key, value) VALUES ('brand', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = $1::jsonb", json.dumps(existing))
+    return RedirectResponse("/admin/site", status_code=303)
 
 
 @rt("/admin/site/topbar")
@@ -774,7 +842,7 @@ async def admin_site_footer(req):
         if conn:
             row = await conn.fetchrow("SELECT value FROM site_config WHERE key='footer'")
             existing = dict(row["value"]) if row else {}
-            existing.update({"address": form.get("address", ""), "phone": form.get("phone", ""), "email": form.get("email", "")})
+            existing.update({"address": form.get("address", ""), "phone": form.get("phone", ""), "email": form.get("email", ""), "description": form.get("description", ""), "copyright": form.get("copyright", "")})
             await conn.execute("INSERT INTO site_config (key, value) VALUES ('footer', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = $1::jsonb", json.dumps(existing))
     return RedirectResponse("/admin/site", status_code=303)
 
@@ -786,7 +854,7 @@ async def admin_site_brochure(req, slug: str):
     form = await req.form()
     async with get_conn() as conn:
         if conn:
-            await conn.execute("UPDATE category_brochures SET title=$1, desc=$2, image=$3, button_text=$4 WHERE slug=$5",
+            await conn.execute('UPDATE category_brochures SET title=$1, "desc"=$2, image=$3, button_text=$4 WHERE slug=$5',
                 form.get("title"), form.get("desc"), form.get("image"), form.get("button_text"), slug)
     return RedirectResponse("/admin/site", status_code=303)
 

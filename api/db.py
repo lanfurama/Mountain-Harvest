@@ -125,6 +125,7 @@ async def init_db():
         if r == 0:
             await conn.execute("""
                 INSERT INTO site_config (key, value) VALUES
+                ('brand', '{"siteName": "Mountain Harvest", "tagline": "Nature''s Best", "icon": "fas fa-mountain"}'::jsonb),
                 ('topbar', '{"freeShipping": "Miễn phí vận chuyển cho đơn hàng từ 500k", "hotline": "1900 1234", "support": "Hỗ trợ khách hàng"}'::jsonb),
                 ('footer', '{"address": "123 Đường Mây Núi, Đà Lạt", "phone": "1900 1234", "email": "cskh@mountainharvest.vn", "links": [{"label": "Hướng dẫn mua hàng", "url": "#"}, {"label": "Chính sách giao hàng", "url": "#"}, {"label": "Đổi trả & Hoàn tiền", "url": "#"}, {"label": "Câu hỏi thường gặp", "url": "#"}], "social": [{"icon": "facebook-f", "url": "#"}, {"icon": "tiktok", "url": "#"}, {"icon": "youtube", "url": "#"}]}'::jsonb)
             """)
