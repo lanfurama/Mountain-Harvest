@@ -135,7 +135,7 @@ def render_news_detail_html(base_html: str, news: dict, current_url: str) -> str
     hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
     base_html = base_html.replace('</head>', hide_style + '\n</head>')
     
-    # Render news detail content
+    # Render news detail content (without hidden class)
     news_detail_html = f'''<article id="news-detail" class="w-full">
       <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
         <img src="{image}" alt="{title}" class="w-full h-full object-cover">
@@ -151,17 +151,18 @@ def render_news_detail_html(base_html: str, news: dict, current_url: str) -> str
       </div>
     </article>'''
     
-    # Replace existing news-detail section or insert new one
-    if '<article id="news-detail"' in base_html:
-        # Replace the entire news-detail article
+    # Replace existing news-detail section (match multiline with DOTALL)
+    # Pattern matches from <article id="news-detail" to closing </article>
+    news_detail_pattern = r'<article id="news-detail"[^>]*>[\s\S]*?</article>'
+    if re.search(news_detail_pattern, base_html):
         base_html = re.sub(
-            r'<article id="news-detail"[^>]*>.*?</article>',
+            news_detail_pattern,
             news_detail_html,
             base_html,
-            flags=re.DOTALL
+            count=1  # Only replace first match
         )
     else:
-        # Insert before closing main tag
+        # Insert before closing main tag if not found
         base_html = re.sub(
             r'(</main>)',
             news_detail_html + r'\1',
