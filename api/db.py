@@ -70,7 +70,8 @@ async def init_db():
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 image TEXT,
-                summary TEXT,
+                content TEXT,
+                author VARCHAR(255),
                 date VARCHAR(20),
                 sort_order INTEGER DEFAULT 0,
                 created_at TIMESTAMPTZ DEFAULT NOW()
@@ -147,7 +148,7 @@ async def init_db():
         r = await conn.fetchval("SELECT COUNT(*) FROM news")
         if r == 0:
             await conn.execute("""
-                INSERT INTO news (title, image, summary, date, sort_order) VALUES
-                ('Mùa Thu Hoạch Bơ Sáp 034 Đã Bắt Đầu', 'https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', 'Những trái bơ sáp 034 dẻo, béo ngậy đầu tiên của mùa vụ năm nay đã chính thức lên kệ tại Mountain Harvest.', '03/02/2026', 1),
-                ('Bí Quyết Giữ Rau Củ Tươi Lâu Trong Tủ Lạnh', 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', 'Chia sẻ những mẹo vặt đơn giản nhưng hiệu quả để bảo quản rau củ quả luôn tươi ngon suốt cả tuần.', '01/02/2026', 2)
+                INSERT INTO news (title, image, content, author, date, sort_order) VALUES
+                ('Mùa Thu Hoạch Bơ Sáp 034 Đã Bắt Đầu', 'https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', '<p>Những trái bơ sáp 034 dẻo, béo ngậy đầu tiên của mùa vụ năm nay đã chính thức lên kệ tại Mountain Harvest.</p>', 'Admin', '03/02/2026', 1),
+                ('Bí Quyết Giữ Rau Củ Tươi Lâu Trong Tủ Lạnh', 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80', '<p>Chia sẻ những mẹo vặt đơn giản nhưng hiệu quả để bảo quản rau củ quả luôn tươi ngon suốt cả tuần.</p>', 'Admin', '01/02/2026', 2)
             """)

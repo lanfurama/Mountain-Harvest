@@ -1,0 +1,129 @@
+<!-- Top Bar (Thông báo/Hotline) -->
+<div class="bg-brand-green text-white text-xs py-2 px-4 hidden md:block">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <span data-i18n="topbar.freeShipping"><i class="fas fa-truck mr-2"></i>Free shipping for orders over 500k</span>
+    <div class="flex items-center space-x-4">
+      <a href="#" class="hover:text-brand-light" data-i18n="topbar.hotline">Hotline: 1900 1234</a>
+      <a href="#" class="hover:text-brand-light" data-i18n="topbar.support">Customer Support</a>
+      <!-- Language Switch -->
+      <div class="flex items-center gap-2 border-l border-white/30 pl-4">
+        <button onclick="changeLanguage('en')" id="lang-en" class="px-2 py-1 rounded hover:bg-white/20 transition font-medium">EN</button>
+        <span class="text-white/50">|</span>
+        <button onclick="changeLanguage('vi')" id="lang-vi" class="px-2 py-1 rounded hover:bg-white/20 transition">VI</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation & Search -->
+<nav class="bg-white shadow-md sticky top-0 w-full z-50 transition-all duration-300" id="navbar">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-20 gap-4">
+
+      <!-- Logo -->
+      <div class="flex-shrink-0 flex items-center cursor-pointer min-w-fit" onclick="window.scrollTo(0,0)">
+        <i id="site-icon" class="fas fa-mountain text-brand-green text-3xl mr-2"></i>
+        <div class="hidden sm:block">
+          <h1 id="site-name" class="text-xl md:text-2xl font-bold text-brand-green tracking-wide">Mountain Harvest</h1>
+          <span id="site-tagline" class="text-[10px] text-brand-brown tracking-widest uppercase block text-center">Nature's Best</span>
+        </div>
+      </div>
+
+      <!-- SEARCH BOX (Central Feature) -->
+      <div class="hidden md:flex flex-1 max-w-2xl mx-4 relative group">
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-search text-gray-400 group-focus-within:text-brand-green transition"></i>
+          </div>
+          <input type="text"
+            class="block w-full pl-10 pr-32 py-2.5 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm transition shadow-sm"
+            placeholder="Search products..." data-i18n-placeholder="search.placeholder">
+
+          <!-- Quick Category Select inside Search -->
+          <div class="absolute inset-y-0 right-0 flex items-center">
+            <select
+              class="h-full py-0 pl-2 pr-8 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-r-md focus:ring-0 cursor-pointer hover:text-brand-green font-medium">
+              <option data-i18n="search.all">All</option>
+              <option data-i18n="search.agricultural">Agricultural Products</option>
+              <option data-i18n="search.essentials">Essentials</option>
+            </select>
+            <button
+              class="absolute right-1 top-1 bottom-1 bg-brand-green hover:bg-brand-darkGreen text-white px-4 rounded-full transition text-sm font-bold" data-i18n="search.button">
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Actions -->
+      <div class="flex items-center space-x-6 text-gray-600">
+        <!-- User Account -->
+        <div class="hidden md:flex flex-col items-center cursor-pointer hover:text-brand-green">
+          <i class="far fa-user text-xl"></i>
+          <span class="text-[10px] mt-1" data-i18n="nav.account">Account</span>
+        </div>
+
+        <!-- Cart with Notification -->
+        <div class="relative group cursor-pointer hover:text-brand-green">
+          <div class="flex flex-col items-center">
+            <div class="relative">
+              <i class="fas fa-shopping-basket text-xl"></i>
+              <span id="cart-count"
+                class="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-bounce hidden">0</span>
+            </div>
+            <span class="text-[10px] mt-1 hidden md:block" data-i18n="nav.cart">Cart</span>
+          </div>
+
+          <!-- Mini Cart Preview (Hover) -->
+          <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
+            <div class="w-72 bg-white rounded-lg shadow-xl border border-gray-100 p-4">
+            <h4 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2" data-i18n="cart.title">Your Cart</h4>
+            <div id="cart-items" class="space-y-3 mb-4 max-h-48 overflow-y-auto custom-scrollbar">
+              <!-- Items will be injected here by JS -->
+              <div class="text-center text-gray-500 py-4 text-sm" data-i18n="cart.loading">Loading...</div>
+            </div>
+            <div class="flex justify-between text-sm font-bold mb-3 text-brand-green">
+              <span data-i18n="cart.total">Total:</span>
+              <span id="cart-total">0đ</span>
+            </div>
+            <button class="w-full bg-brand-brown text-white py-2 rounded text-sm hover:bg-gray-800 transition" data-i18n="cart.checkout">Checkout Now</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="md:hidden text-2xl">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Bar (Desktop) -->
+    <div class="hidden md:flex justify-center space-x-8 py-2 border-t border-gray-100 text-sm font-medium">
+      <a href="#fresh-food" class="hover:text-brand-green transition flex items-center"><i
+          class="fas fa-carrot mr-1"></i><span data-i18n="nav.fresh">Fresh</span></a>
+      <a href="#dry-food" class="hover:text-brand-green transition flex items-center"><i
+          class="fas fa-wheat-awn mr-1"></i><span data-i18n="nav.dry">Dry Food</span></a>
+      <a href="#beverage" class="hover:text-brand-green transition flex items-center"><i
+          class="fas fa-coffee mr-1"></i><span data-i18n="nav.beverage">Beverages</span></a>
+      <div class="w-px h-4 bg-gray-300"></div>
+      <a href="#home-line" class="hover:text-brand-brown transition flex items-center"><i
+          class="fas fa-house-chimney mr-1"></i>Home Line</a>
+      <a href="#dhp" class="hover:text-brand-brown transition flex items-center"><i
+          class="fas fa-spray-can-sparkles mr-1"></i><span data-i18n="nav.cosmetics">Cosmetics</span></a>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Panel -->
+  <div id="mobile-menu" class="hidden md:hidden bg-white border-t p-4">
+    <input type="text" class="w-full border p-2 rounded mb-4" placeholder="Search..." data-i18n-placeholder="search.placeholder">
+    <div class="space-y-2">
+      <a href="#" class="block font-bold text-brand-green" data-i18n="search.agricultural">Agricultural Products</a>
+      <div class="pl-4 space-y-1 text-sm text-gray-600">
+        <a href="#" class="block" data-i18n="nav.fresh">Fresh</a>
+        <a href="#" class="block" data-i18n="nav.dry">Dry Food</a>
+      </div>
+      <a href="#" class="block font-bold text-brand-brown mt-2" data-i18n="search.essentials">Essentials</a>
+    </div>
+  </div>
+</nav>

@@ -60,6 +60,34 @@ app = FastHTML(
 rt = app.route
 
 
+# Serve static files from subdirectories
+@rt("/css/{filename:str}")
+async def serve_css(filename: str):
+    """Serve CSS files."""
+    file_path = PUBLIC_DIR / "css" / filename
+    if file_path.exists() and file_path.suffix == ".css":
+        return FileResponse(file_path, media_type="text/css")
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@rt("/js/{filename:str}")
+async def serve_js(filename: str):
+    """Serve JavaScript files."""
+    file_path = PUBLIC_DIR / "js" / filename
+    if file_path.exists() and file_path.suffix == ".js":
+        return FileResponse(file_path, media_type="application/javascript")
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@rt("/components/{filename:str}")
+async def serve_components(filename: str):
+    """Serve component HTML files."""
+    file_path = PUBLIC_DIR / "components" / filename
+    if file_path.exists() and file_path.suffix == ".html":
+        return FileResponse(file_path, media_type="text/html")
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
 @rt("/")
 async def index():
     """Serve frontend index.html."""
@@ -202,7 +230,7 @@ async def api_news(page: int = 1, limit: int = 6):
         total = count_row["n"] or 0
         offset = (page - 1) * limit
         rows = await conn.fetch(
-            "SELECT id, title, image, summary, date FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
+            "SELECT id, title, image, content, author, date FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
             limit, offset,
         )
     items = [dict(r) for r in rows]
@@ -218,7 +246,7 @@ async def api_news_one(id: int):
                 if item.get("id") == id:
                     return JSONResponse(item)
             return JSONResponse({"error": "Not found"}, status_code=404)
-        row = await conn.fetchrow("SELECT id, title, image, summary, date FROM news WHERE id = $1", id)
+        row = await conn.fetchrow("SELECT id, title, image, content, author, date FROM news WHERE id = $1", id)
     if not row:
         return JSONResponse({"error": "Not found"}, status_code=404)
     return JSONResponse(dict(row))
@@ -285,7 +313,7 @@ def _mock_products():
 def _mock_news():
     return [
         {"id": 1, "title": "Mùa Thu Hoạch Bơ Sáp 034", "image": "https://images.unsplash.com/photo-1523049673856-35691f096315?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
-         "summary": "Những trái bơ sáp 034 đầu tiên đã lên kệ.", "date": "03/02/2026"},
+         "content": "<p>Những trái bơ sáp 034 đầu tiên đã lên kệ.</p>", "author": "Admin", "date": "03/02/2026"},
     ]
 
 
@@ -319,7 +347,7 @@ NAV_ITEMS = [
 ]
 
 
-def admin_layout(req, title, content):
+def admin_layout(req, title, content, include_editor=False):
     path = req.url.path
     def nav_link(href, icon, label):
         active = (path == href) or (href != "/admin" and path.startswith(href))
@@ -347,13 +375,59 @@ def admin_layout(req, title, content):
     main = Main(cls="ml-64 flex-1 p-6 bg-gray-50 min-h-screen")(
         Div(cls="bg-white rounded-lg shadow p-6")(content),
     )
+    scripts = [Script(src="https://cdn.tailwindcss.com")]
+    head_links = [Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css")]
+    if include_editor:
+        head_links.append(Link(rel="stylesheet", href="https://cdn.quilljs.com/1.3.6/quill.snow.css"))
+        scripts.append(Script(src="https://cdn.quilljs.com/1.3.6/quill.min.js"))
+        scripts.append(Script("""
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof Quill !== 'undefined') {
+                    var editorEl = document.getElementById('news-content-editor');
+                    var contentInput = document.getElementById('news-content');
+                    if (!editorEl) return;
+                    
+                    var quill = new Quill('#news-content-editor', {
+                        theme: 'snow',
+                        modules: {
+                            toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'align': [] }],
+                                ['link', 'image'],
+                                ['clean']
+                            ]
+                        },
+                        placeholder: 'Nhập nội dung...'
+                    });
+                    
+                    if (contentInput && quill) {
+                        var initialContent = contentInput.value || editorEl.innerHTML || '';
+                        quill.root.innerHTML = initialContent;
+                        contentInput.value = initialContent;
+                        
+                        quill.on('text-change', function() {
+                            contentInput.value = quill.root.innerHTML;
+                        });
+                        
+                        var form = contentInput.closest('form');
+                        if (form) {
+                            form.addEventListener('submit', function() {
+                                contentInput.value = quill.root.innerHTML;
+                            });
+                        }
+                    }
+                }
+            });
+        """))
     return Html(
         Head(
             Title(f"{title} - Admin"),
-            Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"),
+            *head_links,
         ),
         Body(
-            Script(src="https://cdn.tailwindcss.com"),
+            *scripts,
             Div(cls="flex min-h-screen")(sidebar, main),
         ),
     )
@@ -581,14 +655,14 @@ async def admin_news(req):
             return admin_layout(req, "News", P("Kết nối database để quản lý tin tức.", cls="text-amber-600"))
         where, params = [], []
         if search:
-            where.append("(title ILIKE $1 OR summary ILIKE $1)")
+            where.append("(title ILIKE $1 OR content ILIKE $1 OR author ILIKE $1)")
             params.append(f"%{search}%")
         where_sql = " AND ".join(where) if where else "1=1"
         count_row = await conn.fetchrow(f"SELECT COUNT(*) as n FROM news WHERE {where_sql}", *params)
         total = count_row["n"]
         offset = (page - 1) * per
         rows = await conn.fetch(
-            f"SELECT id, title, date, summary, image FROM news WHERE {where_sql} ORDER BY sort_order, id DESC LIMIT ${len(params)+1} OFFSET ${len(params)+2}",
+            f"SELECT id, title, date, author, image FROM news WHERE {where_sql} ORDER BY sort_order, id DESC LIMIT ${len(params)+1} OFFSET ${len(params)+2}",
             *params, per, offset,
         )
 
@@ -598,31 +672,19 @@ async def admin_news(req):
     filter_form = Form(method="get", action="/admin/news", cls="flex flex-wrap gap-3 items-end mb-6 p-4 bg-gray-50 rounded-lg")(
         Div(cls="flex-1 min-w-[240px]")(
             Label("Tìm kiếm", cls="block text-sm font-medium mb-1"),
-            Input(name="q", value=search, placeholder="Tiêu đề hoặc tóm tắt...", cls="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            Input(name="q", value=search, placeholder="Tiêu đề, nội dung hoặc tác giả...", cls="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
         ),
         Input(name="per_page", type="hidden", value=str(per)),
         Button("Lọc", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"),
     )
 
-    add_form = Form(method="post", action="/admin/news/new", cls="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg")(
-        H2("Thêm tin", cls="text-lg font-bold mb-3 text-gray-800"),
-        Div(cls="grid grid-cols-2 gap-4")(
-            Div(Label("Tiêu đề", cls="block text-sm font-medium mb-1"), Input(name="title", cls="w-full border rounded px-2 py-1", required=True)),
-            Div(Label("Ngày (dd/mm/yyyy)", cls="block text-sm font-medium mb-1"), Input(name="date", cls="w-full border rounded px-2 py-1", placeholder="01/02/2026")),
-            Div(Label("Ảnh URL", cls="block text-sm font-medium mb-1"), Input(name="image", type="url", cls="w-full border rounded px-2 py-1")),
-        ),
-        Div(cls="mt-2")(Label("Tóm tắt", cls="block text-sm font-medium mb-1"), Textarea(name="summary", cls="w-full border rounded px-2 py-1", rows=2)),
-        Button("Thêm", type="submit", cls="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"),
-    )
-
     rows_html = []
     for r in rows:
-        summ = (r["summary"] or "")[:60] + ("..." if (r["summary"] and len(r["summary"]) > 60) else "")
         rows_html.append(Tr(cls="hover:bg-gray-50")(
             Td(r["id"], cls="px-4 py-3 border-t border-gray-200 font-mono text-gray-500 text-sm"),
             Td(r["title"], cls="px-4 py-3 border-t border-gray-200 font-medium"),
             Td(r["date"] or "-", cls="px-4 py-3 border-t border-gray-200 text-gray-600 text-sm"),
-            Td(summ, cls="px-4 py-3 border-t border-gray-200 text-gray-500 text-sm max-w-xs truncate"),
+            Td(r["author"] or "-", cls="px-4 py-3 border-t border-gray-200 text-gray-600 text-sm"),
             Td(Img(src=r["image"] or "", cls="w-12 h-12 object-cover rounded border") if r.get("image") else Span("-", cls="text-gray-400"), cls="px-4 py-3 border-t border-gray-200"),
             Td(cls="px-4 py-3 border-t border-gray-200 whitespace-nowrap")(
                 A(I(cls="fas fa-edit"), href=f"/admin/news/{r['id']}/edit", cls="inline-flex items-center gap-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded text-sm mr-1"),
@@ -633,7 +695,7 @@ async def admin_news(req):
         ))
     table = Table(cls="w-full border-collapse")(
         Thead(cls="bg-gray-100")(
-            Tr(Th("ID", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Tiêu đề", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Ngày", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Tóm tắt", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Ảnh", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Thao tác", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600")),
+            Tr(Th("ID", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Tiêu đề", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Ngày", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Tác giả", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Ảnh", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600"), Th("Thao tác", cls="px-4 py-3 text-left text-xs font-semibold text-gray-600")),
         ),
         Tbody(*rows_html),
     )
@@ -656,19 +718,66 @@ async def admin_news(req):
 
     header = Div(cls="flex flex-wrap justify-between items-center gap-4 mb-4")(
         H1("Tin tức", cls="text-2xl font-bold text-gray-800"),
-        Span(f"{total} tin" + (f" • Trang {page}/{total_pages}" if total_pages > 1 else ""), cls="text-sm text-gray-500"),
+        Div(cls="flex items-center gap-3")(
+            A("+ Thêm tin mới", href="/admin/news/add", cls="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium inline-flex items-center gap-2"),
+            Span(f"{total} tin" + (f" • Trang {page}/{total_pages}" if total_pages > 1 else ""), cls="text-sm text-gray-500"),
+        ),
     )
-    return admin_layout(req, "News", Div(header, filter_form, add_form, Div(cls="overflow-x-auto")(table), pagination_html))
+    return admin_layout(req, "News", Div(header, filter_form, Div(cls="overflow-x-auto")(table), pagination_html))
 
 
-@rt("/admin/news/new")
-async def admin_news_new(req):
-    form = await req.form()
-    async with get_conn() as conn:
-        if conn:
-            await conn.execute("INSERT INTO news (title, image, summary, date) VALUES ($1, $2, $3, $4)",
-                form.get("title"), form.get("image") or None, form.get("summary") or None, form.get("date") or None)
-    return RedirectResponse("/admin/news", status_code=303)
+@rt("/admin/news/add")
+async def admin_news_add(req):
+    if req.method == "POST":
+        form = await req.form()
+        date_value = form.get("date")
+        if date_value:
+            from datetime import datetime
+            try:
+                date_obj = datetime.strptime(date_value, "%Y-%m-%d")
+                date_value = date_obj.strftime("%d/%m/%Y")
+            except:
+                pass
+        async with get_conn() as conn:
+            if conn:
+                await conn.execute("INSERT INTO news (title, image, content, author, date) VALUES ($1, $2, $3, $4, $5)",
+                    form.get("title"), form.get("image") or None, form.get("content") or None, form.get("author") or "Mountain Harvest", date_value)
+        return RedirectResponse("/admin/news", status_code=303)
+    
+    from datetime import datetime
+    current_date_display = datetime.now().strftime("%d/%m/%Y")
+    current_date_value = datetime.now().strftime("%Y-%m-%d")
+    
+    form = Form(method="post", action="/admin/news/add", cls="space-y-3")(
+        Div(
+            Label("Tiêu đề", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Input(name="title", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500", required=True),
+        ),
+        Div(cls="grid grid-cols-2 gap-3")(
+            Div(
+                Label("Tác giả", cls="block text-sm font-medium mb-1 text-gray-700"),
+                Input(name="author", value="Mountain Harvest", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            ),
+            Div(
+                Label("Ngày tạo", cls="block text-sm font-medium mb-1 text-gray-700"),
+                Input(name="date", type="date", value=current_date_value, cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            ),
+        ),
+        Div(
+            Label("Ảnh URL", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Input(name="image", type="url", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+        ),
+        Div(
+            Label("Nội dung", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Div(id="news-content-editor", cls="bg-white", style="height: 400px;"),
+            Textarea(name="content", id="news-content", cls="hidden"),
+        ),
+        Div(cls="flex gap-2")(
+            Button("Lưu", type="submit", cls="px-4 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"),
+            A("Hủy", href="/admin/news", cls="px-4 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-medium text-sm"),
+        ),
+    )
+    return admin_layout(req, "Thêm tin mới", Div(H1("Thêm tin mới", cls="text-2xl font-bold mb-6 text-gray-800"), form), include_editor=True)
 
 
 @rt("/admin/news/{id:int}/edit")
@@ -679,14 +788,46 @@ async def admin_news_edit(req, id: int):
         r = await conn.fetchrow("SELECT * FROM news WHERE id = $1", id)
     if not r:
         return RedirectResponse("/admin/news")
+    
+    from datetime import datetime
+    date_value = r["date"] or ""
+    if date_value:
+        try:
+            date_obj = datetime.strptime(date_value, "%d/%m/%Y")
+            date_value = date_obj.strftime("%Y-%m-%d")
+        except:
+            pass
+    
     f = Form(method="post", action=f"/admin/news/{id}", cls="space-y-4")(
-        Div(Label("Tiêu đề"), Input(name="title", value=r["title"], cls="w-full border rounded px-2 py-1")),
-        Div(Label("Ngày"), Input(name="date", value=r["date"] or "", cls="w-full border rounded px-2 py-1")),
-        Div(Label("Ảnh URL"), Input(name="image", value=r["image"] or "", cls="w-full border rounded px-2 py-1")),
-        Div(Label("Tóm tắt"), Textarea(name="summary", cls="w-full border rounded px-2 py-1", rows=4)(r["summary"] or "")),
-        Button("Lưu", type="submit", cls="px-4 py-2 bg-blue-600 text-white rounded"),
+        Div(
+            Label("Tiêu đề", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Input(name="title", value=r["title"] or "", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+        ),
+        Div(cls="grid grid-cols-2 gap-4")(
+            Div(
+                Label("Tác giả", cls="block text-sm font-medium mb-1 text-gray-700"),
+                Input(name="author", value=r["author"] or "", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            ),
+            Div(
+                Label("Ngày", cls="block text-sm font-medium mb-1 text-gray-700"),
+                Input(name="date", type="date", value=date_value, cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            ),
+        ),
+        Div(
+            Label("Ảnh URL", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Input(name="image", value=r["image"] or "", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+        ),
+        Div(
+            Label("Nội dung", cls="block text-sm font-medium mb-1 text-gray-700"),
+            Div(id="news-content-editor", cls="bg-white", style="height: 400px;")(r["content"] or ""),
+            Textarea(name="content", id="news-content", cls="hidden")(r["content"] or ""),
+        ),
+        Div(cls="flex gap-3")(
+            Button("Lưu", type="submit", cls="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"),
+            A("Hủy", href="/admin/news", cls="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"),
+        ),
     )
-    return admin_layout(req, "Sửa tin", Div(H1("Sửa tin", cls="text-2xl font-bold mb-4"), f))
+    return admin_layout(req, "Sửa tin", Div(H1("Sửa tin", cls="text-2xl font-bold mb-6 text-gray-800"), f), include_editor=True)
 
 
 @rt("/admin/news/{id:int}")
@@ -694,10 +835,18 @@ async def admin_news_update(req, id: int):
     if req.method != "POST":
         return RedirectResponse("/admin/news")
     form = await req.form()
+    date_value = form.get("date")
+    if date_value:
+        from datetime import datetime
+        try:
+            date_obj = datetime.strptime(date_value, "%Y-%m-%d")
+            date_value = date_obj.strftime("%d/%m/%Y")
+        except:
+            pass
     async with get_conn() as conn:
         if conn:
-            await conn.execute("UPDATE news SET title=$1, date=$2, image=$3, summary=$4 WHERE id=$5",
-                form.get("title"), form.get("date") or None, form.get("image") or None, form.get("summary") or None, id)
+            await conn.execute("UPDATE news SET title=$1, date=$2, image=$3, content=$4, author=$5 WHERE id=$6",
+                form.get("title"), date_value or None, form.get("image") or None, form.get("content") or None, form.get("author") or None, id)
     return RedirectResponse("/admin/news", status_code=303)
 
 
