@@ -65,7 +65,7 @@ async def news_detail_page(req, id: int):
     # Add header to indicate server-side rendering
     if hasattr(response, 'headers'):
         response.headers['X-Server-Rendered'] = 'true'
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=600'
     return response
 
 

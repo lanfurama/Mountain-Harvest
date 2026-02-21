@@ -1,8 +1,30 @@
 """News controller."""
+from typing import Optional
 from starlette.responses import JSONResponse, RedirectResponse, HTMLResponse
 from pathlib import Path
 from api.services.news_service import NewsService
 from api.views.news_views import NewsViews
+
+_index_html_cache = None
+
+
+def _get_index_html() -> Optional[str]:
+    """Get index.html content, cached in memory after first read."""
+    global _index_html_cache
+    if _index_html_cache is not None:
+        return _index_html_cache
+    possible_paths = [
+        Path(__file__).resolve().parent.parent.parent / "public" / "index.html",
+        Path.cwd() / "public" / "index.html",
+    ]
+    for path in possible_paths:
+        try:
+            if path.exists() and path.is_file():
+                _index_html_cache = path.read_text(encoding="utf-8")
+                return _index_html_cache
+        except (FileNotFoundError, OSError):
+            continue
+    return None
 
 
 class NewsController:
@@ -36,69 +58,36 @@ class NewsController:
     @staticmethod
     async def render_news_page(req, id: int):
         """Render news detail page."""
-        # Try multiple paths for index.html (works on both local and Vercel)
-        possible_paths = [
-            NewsController.PUBLIC_DIR / "index.html",
-            Path(__file__).resolve().parent.parent.parent / "public" / "index.html",
-            Path.cwd() / "public" / "index.html",
-        ]
-        
-        idx = None
-        for path in possible_paths:
-            try:
-                if path.exists() and path.is_file():
-                    idx = path
-                    break
-            except Exception:
-                continue
-        
         try:
             news = await NewsService.get_news_by_id_with_mock_fallback(id)
             if not news:
                 return RedirectResponse("/", status_code=302)
-            
-            if idx:
-                try:
-                    html_content = idx.read_text(encoding='utf-8')
-                    current_url = str(req.url)
-                    html_content = NewsViews.render_detail(html_content, news, current_url)
-                    return HTMLResponse(content=html_content)
-                except (FileNotFoundError, OSError) as e:
-                    # If file read fails, fallback to query parameter approach
-                    # Client-side will handle ?news= parameter
-                    return RedirectResponse("/?news=" + str(id), status_code=302)
-            else:
-                # If file not found, redirect to query parameter approach
-                return RedirectResponse("/?news=" + str(id), status_code=302)
+
+            html_content = _get_index_html()
+            if html_content:
+                current_url = str(req.url)
+                html_content = NewsViews.render_detail(html_content, news, current_url)
+                return HTMLResponse(content=html_content)
+            return RedirectResponse("/?news=" + str(id), status_code=302)
         except Exception:
             return RedirectResponse("/", status_code=302)
     
     @staticmethod
     async def render_index_with_news(req):
         """Render index page with optional news parameter."""
-        idx = NewsController.PUBLIC_DIR / "index.html"
-        
-        try:
-            if not idx.exists():
-                return None
-        except Exception:
-            pass
-        
         news_id = req.query_params.get("news")
-        if news_id:
-            try:
-                news_id_int = int(news_id)
-                news = await NewsService.get_news_by_id_with_mock_fallback(news_id_int)
-                if news:
-                    try:
-                        html_content = idx.read_text(encoding='utf-8')
-                    except (FileNotFoundError, OSError):
-                        from starlette.responses import FileResponse
-                        return FileResponse(idx)
-                    current_url = str(req.url)
-                    html_content = NewsViews.render_detail(html_content, news, current_url)
-                    return HTMLResponse(content=html_content)
-            except (ValueError, Exception):
-                pass
-        
+        if not news_id:
+            return None
+        try:
+            news_id_int = int(news_id)
+            news = await NewsService.get_news_by_id_with_mock_fallback(news_id_int)
+            if not news:
+                return None
+            html_content = _get_index_html()
+            if html_content:
+                current_url = str(req.url)
+                html_content = NewsViews.render_detail(html_content, news, current_url)
+                return HTMLResponse(content=html_content)
+        except (ValueError, Exception):
+            pass
         return None

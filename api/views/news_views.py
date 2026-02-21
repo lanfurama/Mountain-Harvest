@@ -59,6 +59,8 @@ class NewsViews:
         if image:
             meta_tags_to_update.extend([
                 ('property', 'og:image', image),
+                ('property', 'og:image:width', '1200'),
+                ('property', 'og:image:height', '630'),
                 ('name', 'twitter:image', image),
             ])
         
@@ -85,6 +87,11 @@ class NewsViews:
             base_html = re.sub(r'<link\s+rel=["\']canonical["\'][^>]*>', canonical_tag, base_html, flags=re.IGNORECASE, count=1)
         else:
             base_html = base_html.replace('</head>', f'  {canonical_tag}\n</head>', 1)
+
+        # Preload cover image for LCP
+        if image:
+            preload_tag = f'<link rel="preload" as="image" href="{image}" fetchpriority="high">'
+            base_html = base_html.replace('</head>', preload_tag + '\n</head>', 1)
 
         # Add style to hide shop content and hero
         hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
@@ -120,7 +127,7 @@ class NewsViews:
         # Add data attribute to indicate server-rendered content
         news_detail_html = f'''<article id="news-detail" class="w-full" data-server-rendered="true">
       <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
-        <img id="news-detail-image" src="{image}" alt="{title}" class="w-full h-full object-cover">
+        <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" class="w-full h-full object-cover">
       </div>
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
         <a href="/" class="inline-flex items-center gap-2 text-brand-green font-bold hover:underline mb-6">
@@ -135,6 +142,15 @@ class NewsViews:
       </div>
     </article>'''
         
+        # Skip products.js on news detail page to reduce payload
+        base_html = re.sub(
+            r'<script\s+src=["\']/js/products\.js["\'][^>]*></script>',
+            '<!-- products.js skipped on news page -->',
+            base_html,
+            flags=re.IGNORECASE,
+            count=1,
+        )
+
         # Replace existing news-detail section (match multiline with DOTALL)
         # Pattern matches from <article id="news-detail" to closing </article>
         news_detail_pattern = r'<article id="news-detail"[^>]*>[\s\S]*?</article>'

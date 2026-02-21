@@ -95,18 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Only load homepage data if not on news detail page
   if (!isNewsDetailPage) {
     loadData();
-  }
-  
-  renderCart();
-  ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', function () { loadProducts(1); });
-  });
-  const clearBtn = document.getElementById('clear-filters');
-  if (clearBtn) clearBtn.addEventListener('click', function (e) { e.preventDefault(); clearAllFilters(); });
+    renderCart();
+    ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', function () { loadProducts(1); });
+    });
+    const clearBtn = document.getElementById('clear-filters');
+    if (clearBtn) clearBtn.addEventListener('click', function (e) { e.preventDefault(); clearAllFilters(); });
 
-  const modal = document.getElementById('product-modal');
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
+    const modal = document.getElementById('product-modal');
+    if (modal) modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  } else {
+    renderCart();
+  }
 });
