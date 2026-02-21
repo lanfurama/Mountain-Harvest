@@ -177,7 +177,28 @@ async function loadNewsDetail(id) {
     if (authorEl) {
       authorEl.textContent = news.author ? 'Tác giả: ' + news.author : '';
     }
-    document.getElementById('news-detail-title').textContent = news.title || '';
+    const h1Val = news.h1_custom || news.title || '';
+    document.getElementById('news-detail-title').textContent = h1Val;
+    const h2El = document.getElementById('news-detail-h2');
+    const h3El = document.getElementById('news-detail-h3');
+    if (h2El) {
+      if (news.h2_custom) {
+        h2El.textContent = news.h2_custom;
+        h2El.classList.remove('hidden');
+      } else {
+        h2El.textContent = '';
+        h2El.classList.add('hidden');
+      }
+    }
+    if (h3El) {
+      if (news.h3_custom) {
+        h3El.textContent = news.h3_custom;
+        h3El.classList.remove('hidden');
+      } else {
+        h3El.textContent = '';
+        h3El.classList.add('hidden');
+      }
+    }
     var contentEl = document.getElementById('news-detail-content');
     if (contentEl) {
       contentEl.innerHTML = news.content || '';

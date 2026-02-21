@@ -8,10 +8,11 @@
   <meta property="og:title" content="Mountain Harvest - Tinh Hoa Nông Sản &amp; Nhu Yếu Phẩm">
   <meta property="og:description" content="Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="">
+  <meta property="og:image" content="https://mountainharvest.vn/logo.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mountain Harvest - Tinh Hoa Nông Sản &amp; Nhu Yếu Phẩm">
   <meta name="twitter:description" content="Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.">
+  <link rel="canonical" href="https://mountainharvest.vn/">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
@@ -315,7 +316,9 @@
     </section>
 
     <!-- CATEGORY BROCHURE (Re-styled for Sales) -->
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold text-gray-800 mb-8" data-i18n="category.title">Danh mục sản phẩm</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div class="relative rounded-2xl overflow-hidden h-80 group cursor-pointer">
         <img
           src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"
@@ -333,6 +336,7 @@
       <div class="relative rounded-2xl overflow-hidden h-80 group cursor-pointer">
         <img
           src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?ixlib=rb-1.2.1&amp;auto=format&amp;fit=crop&amp;w=1000&amp;q=80"
+          alt="Green Essentials"
           class="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105">
         <div class="absolute inset-0 bg-black/40 hover:bg-black/30 transition"></div>
         <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
@@ -341,6 +345,7 @@
           <button
             class="bg-white text-brand-brown px-6 py-2 rounded-full font-bold hover:bg-brand-brown hover:text-white transition" data-i18n="category.essentials.button">Explore</button>
         </div>
+      </div>
       </div>
     </section>
 
@@ -390,6 +395,8 @@
         <span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>
         <span id="news-detail-author" class="text-sm text-gray-500 block mb-4"></span>
         <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight"></h1>
+        <h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-800 mb-4 hidden"></h2>
+        <h3 id="news-detail-h3" class="text-xl font-semibold text-gray-700 mb-3 hidden"></h3>
         <div id="news-detail-content" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none"></div>
       </div>
     </article>

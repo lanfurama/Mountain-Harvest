@@ -13,6 +13,8 @@ class NewsViews:
         title = escape(news.get("title", "Mountain Harvest"))
         meta_title = escape(news.get("meta_title") or title)
         h1_custom = escape(news.get("h1_custom") or title)
+        h2_custom = escape(news.get("h2_custom") or "") if news.get("h2_custom") else ""
+        h3_custom = escape(news.get("h3_custom") or "") if news.get("h3_custom") else ""
         image = news.get("image", "") or ""
         # Ensure image is absolute URL
         if image and not image.startswith(("http://", "https://")):
@@ -77,6 +79,13 @@ class NewsViews:
                 new_tag = f'  <meta {attr_type}="{attr_name}" content="{attr_value}">\n'
                 base_html = base_html.replace('</head>', new_tag + '</head>', 1)
         
+        # Add canonical link
+        canonical_tag = f'<link rel="canonical" href="{escape(current_url)}">'
+        if re.search(r'<link\s+rel=["\']canonical["\']', base_html, flags=re.IGNORECASE):
+            base_html = re.sub(r'<link\s+rel=["\']canonical["\'][^>]*>', canonical_tag, base_html, flags=re.IGNORECASE, count=1)
+        else:
+            base_html = base_html.replace('</head>', f'  {canonical_tag}\n</head>', 1)
+
         # Add style to hide shop content and hero
         hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
         base_html = base_html.replace('</head>', hide_style + '\n</head>')
@@ -120,6 +129,8 @@ class NewsViews:
         {f'<span id="news-detail-date" class="text-sm text-gray-500 block mb-2">{date}</span>' if date else '<span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>'}
         {f'<span id="news-detail-author" class="text-sm text-gray-500 block mb-4">Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="text-sm text-gray-500 block mb-4"></span>'}
         <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{h1_custom}</h1>
+        {f'<h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-800 mb-4">{h2_custom}</h2>' if h2_custom else ''}
+        {f'<h3 id="news-detail-h3" class="text-xl font-semibold text-gray-700 mb-3">{h3_custom}</h3>' if h3_custom else ''}
         <div id="news-detail-content" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none">{content}</div>
       </div>
     </article>'''

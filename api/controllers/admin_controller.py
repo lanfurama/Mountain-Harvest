@@ -336,9 +336,9 @@ class AdminController:
                 date=date_value,
                 meta_title=meta_title,
                 meta_description=meta_description,
-                h1_custom=None,
-                h2_custom=None,
-                h3_custom=None,
+                h1_custom=form.get("h1_custom") or None,
+                h2_custom=form.get("h2_custom") or None,
+                h3_custom=form.get("h3_custom") or None,
             )
             return RedirectResponse("/admin/news", status_code=303)
         
@@ -362,6 +362,11 @@ class AdminController:
             Div(
                 Label("Ảnh URL", cls="block text-sm font-medium mb-1 text-gray-700"),
                 Input(name="image", type="url", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+            ),
+            Div(cls="grid grid-cols-3 gap-3")(
+                Div(Label("H1 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h1_custom", placeholder="H1 SEO", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500")),
+                Div(Label("H2 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h2_custom", placeholder="H2 SEO", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500")),
+                Div(Label("H3 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h3_custom", placeholder="H3 SEO", cls="w-full border border-gray-300 rounded px-2 py-1.5 focus:ring-2 focus:ring-blue-500")),
             ),
             Div(
                 Label("Nội dung", cls="block text-sm font-medium mb-1 text-gray-700"),
@@ -414,6 +419,11 @@ class AdminController:
                 Label("Ảnh URL", cls="block text-sm font-medium mb-1 text-gray-700"),
                 Input(name="image", value=r["image"] or "", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
             ),
+            Div(cls="grid grid-cols-3 gap-4")(
+                Div(Label("H1 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h1_custom", value=r.get("h1_custom") or "", placeholder="H1 SEO", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500")),
+                Div(Label("H2 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h2_custom", value=r.get("h2_custom") or "", placeholder="H2 SEO", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500")),
+                Div(Label("H3 Custom", cls="block text-sm font-medium mb-1 text-gray-700"), Input(name="h3_custom", value=r.get("h3_custom") or "", placeholder="H3 SEO", cls="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500")),
+            ),
             Div(
                 Label("Nội dung", cls="block text-sm font-medium mb-1 text-gray-700"),
                 Div(id="news-content-editor", cls="bg-white", style="height: 400px;")(r["content"] or ""),
@@ -456,9 +466,9 @@ class AdminController:
             author=form.get("author") or None,
             meta_title=meta_title,
             meta_description=meta_description,
-            h1_custom=None,
-            h2_custom=None,
-            h3_custom=None,
+            h1_custom=form.get("h1_custom") or None,
+            h2_custom=form.get("h2_custom") or None,
+            h3_custom=form.get("h3_custom") or None,
         )
         return RedirectResponse("/admin/news", status_code=303)
     
