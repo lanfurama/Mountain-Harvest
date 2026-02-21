@@ -1,6 +1,11 @@
 {
   "rewrites": [
-    { "source": "/news/:id", "destination": "/api/index" },
-    { "source": "/(.*)", "destination": "/api/index" }
-  ]
+    {"source": "/news/:id", "destination": "/api/index"},
+    {"source": "/(.*)", "destination": "/api/index"}
+  ],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "public/index.html"
+    }
+  }
 }
