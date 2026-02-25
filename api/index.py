@@ -1,15 +1,18 @@
 """FastHTML CMS Backend for Mountain Harvest."""
 import os
 from pathlib import Path
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse, JSONResponse, HTMLResponse
 from fasthtml.common import *
 
 from api.db import init_db
 from api.middleware.auth import admin_beforeware
 from api.controllers.product_controller import ProductController
-from api.controllers.news_controller import NewsController
+from api.controllers.news_controller import NewsController, _get_index_html
 from api.controllers.site_controller import SiteController
 from api.controllers.admin_controller import AdminController
+from api.services.product_service import ProductService
+from api.services.news_service import NewsService
+from api.views.home_views import HomeViews
 
 # Paths
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -72,19 +75,80 @@ async def news_detail_page(req, id: int):
 # Frontend routes
 @rt("/")
 async def index(req):
-    """Serve frontend index.html with dynamic SEO and content for news."""
+    """Serve frontend index.html with server-side rendered content."""
+    # If there is an explicit news query, reuse news detail SSR logic
     result = await NewsController.render_index_with_news(req)
     if result:
         return result
-    
-    idx = PUBLIC_DIR / "index.html"
+
+    # Load base HTML template
+    html_template = _get_index_html()
+    if not html_template:
+        idx = PUBLIC_DIR / "index.html"
+        try:
+            if not idx.exists():
+                return Div("Mountain Harvest - Add public/index.html")
+        except Exception:
+            pass
+        return FileResponse(idx)
+
+    # Read filters and pagination from query params
+    qp = req.query_params
+    category = qp.get("category") or None
+    price = qp.get("price") or None
+    standard = qp.get("standard") or None
+    sort = qp.get("sort") or "newest"
+
     try:
-        if not idx.exists():
-            return Div("Mountain Harvest - Add public/index.html")
-    except Exception:
-        pass
-    
-    return FileResponse(idx)
+        page = int(qp.get("page") or 1)
+    except ValueError:
+        page = 1
+    try:
+        news_page = int(qp.get("news_page") or 1)
+    except ValueError:
+        news_page = 1
+
+    # Get products and news data server-side
+    products_items, products_total, products_total_pages = await ProductService.get_products_with_mock_fallback(
+        category=category,
+        price=price,
+        standard=standard,
+        sort=sort,
+        page=page,
+        limit=8,
+    )
+    news_items, news_total, news_total_pages = await NewsService.get_news_with_mock_fallback(
+        page=news_page,
+        limit=6,
+    )
+
+    products_page = {
+        "items": products_items,
+        "total": products_total,
+        "page": page,
+        "total_pages": products_total_pages,
+    }
+    news_page_data = {
+        "items": news_items,
+        "total": news_total,
+        "page": news_page,
+        "total_pages": news_total_pages,
+    }
+    filters = {
+        "category": category or "",
+        "price": price or "",
+        "standard": standard or "",
+        "sort": sort or "newest",
+    }
+
+    rendered_html = HomeViews.render_home(
+        base_html=html_template,
+        products_page=products_page,
+        news_page=news_page_data,
+        filters=filters,
+        news_page_param="news_page",
+    )
+    return HTMLResponse(content=rendered_html)
 
 
 # API routes

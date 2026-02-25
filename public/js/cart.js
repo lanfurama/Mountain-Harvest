@@ -9,8 +9,29 @@ function saveCart() {
   renderCart();
 }
 
-function addToCart(productId) {
-  const product = products.find(p => p.id === productId);
+function addToCart(source) {
+  let product = null;
+
+  // New usage: button element with data attributes
+  if (source && source.dataset) {
+    const btn = source;
+    const id = parseInt(btn.dataset.id, 10);
+    if (!id) return;
+    const price = parseFloat(btn.dataset.price || '0') || 0;
+    product = {
+      id,
+      name: btn.dataset.name || 'Sản phẩm',
+      price,
+      image: btn.dataset.image || '',
+    };
+  } else if (typeof source === 'number') {
+    // Backward-compatible path if products array is still present
+    if (typeof products === 'undefined' || !Array.isArray(products)) return;
+    const found = products.find(p => p.id === source);
+    if (!found) return;
+    product = found;
+  }
+
   if (!product) return;
 
   const existingItem = cart.find(item => item.id === productId);

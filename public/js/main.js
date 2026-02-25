@@ -1,5 +1,5 @@
 /**
- * Mountain Harvest - Main Application Logic
+ * Mountain Harvest - Main Application Logic (SSR-first)
  */
 
 // Global fallback image for broken images
@@ -11,32 +11,6 @@ function handleImageError(img) {
   img.src = FALLBACK_IMAGE_URL;
   img.alt = (img.alt || '') + ' (Hình ảnh tạm thời - ảnh gốc bị lỗi)';
   img.classList.add('bg-gray-100', 'object-contain');
-}
-
-async function loadData() {
-  await Promise.all([loadProducts(1), loadNews(1)]);
-}
-
-async function loadSiteHeader() {
-  try {
-    const res = await fetch('/api/site');
-    if (!res.ok) return;
-    const data = await res.json();
-    const brand = data.brand || data.header || {};
-    const name = brand.siteName || '';
-    const tagline = brand.tagline || '';
-    const iconClass = (brand.icon || 'fas fa-mountain').trim();
-    const nameEl = document.getElementById('site-name');
-    const taglineEl = document.getElementById('site-tagline');
-    const iconEl = document.getElementById('site-icon');
-    const nameFooterEl = document.getElementById('site-name-footer');
-    const iconFooterEl = document.getElementById('site-icon-footer');
-    if (nameEl && name) nameEl.textContent = name;
-    if (taglineEl && tagline) taglineEl.textContent = tagline;
-    if (iconEl) iconEl.className = iconClass + ' text-brand-green text-3xl mr-2';
-    if (nameFooterEl && name) nameFooterEl.textContent = name;
-    if (iconFooterEl) iconFooterEl.className = iconClass + ' text-2xl mr-2';
-  } catch (e) { /* ignore */ }
 }
 
 function showToast(message) {
@@ -69,56 +43,17 @@ function showToast(message) {
 // Sticky Navbar Effect
 window.addEventListener('scroll', function () {
   const navbar = document.getElementById('navbar');
+  if (!navbar) return;
   if (window.scrollY > 50) {
     navbar.classList.add('shadow-lg');
-    navbar.classList.add('py-0');
   } else {
     navbar.classList.remove('shadow-lg');
-    navbar.classList.remove('py-0');
   }
 });
 
-// Initialize
+// Initialize - all critical content is already server-side rendered
 document.addEventListener('DOMContentLoaded', () => {
-  applyLanguage();
-  updateLanguageButtons();
-  loadSiteHeader();
-  
-  // Check if news detail page is being displayed (server-rendered)
-  const newsDetailEl = document.getElementById('news-detail');
-  const mainShopContent = document.getElementById('main-shop-content');
-  const isServerRendered = newsDetailEl && (
-    newsDetailEl.getAttribute('data-server-rendered') === 'true' ||
-    (!newsDetailEl.classList.contains('hidden') &&
-     newsDetailEl.querySelector('#news-detail-title') &&
-     newsDetailEl.querySelector('#news-detail-title').textContent.trim() !== '')
-  );
-  
-  const isNewsDetailPage = isServerRendered || 
-    (mainShopContent && window.getComputedStyle(mainShopContent).display === 'none') ||
-    window.location.pathname.match(/^\/news\/(\d+)$/);
-  
-  // Only check for client-side loading if NOT server-rendered
-  if (!isServerRendered && typeof checkNewsParam === 'function') {
-    checkNewsParam();
-  }
-  
-  // Only load homepage data if not on news detail page
-  if (!isNewsDetailPage) {
-    loadData();
-    renderCart();
-    ['filter-category', 'filter-price', 'filter-standard', 'filter-sort'].forEach(function (id) {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('change', function () { loadProducts(1); });
-    });
-    const clearBtn = document.getElementById('clear-filters');
-    if (clearBtn) clearBtn.addEventListener('click', function (e) { e.preventDefault(); clearAllFilters(); });
-
-    const modal = document.getElementById('product-modal');
-    if (modal) modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-  } else {
-    renderCart();
-  }
+  if (typeof applyLanguage === 'function') applyLanguage();
+  if (typeof updateLanguageButtons === 'function') updateLanguageButtons();
+  if (typeof renderCart === 'function') renderCart();
 });
