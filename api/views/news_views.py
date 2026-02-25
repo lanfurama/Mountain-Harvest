@@ -29,6 +29,12 @@ class NewsViews:
         content = news.get("content", "")
         author = escape(news.get("author", ""))
         date = escape(news.get("date", ""))
+        # Estimate reading time from plain text content
+        text_content = re.sub(r'<[^>]+>', '', content or '')
+        word_count = len(re.findall(r'\w+', text_content))
+        reading_minutes = max(1, word_count // 200) if word_count else 1
+        reading_time_label = f"{reading_minutes} phút đọc"
+        share_url = escape(current_url)
         
         # Use meta_description if available, otherwise extract from content
         meta_description = news.get("meta_description")
@@ -125,20 +131,64 @@ class NewsViews:
         
         # Render news detail content (without hidden class)
         # Add data attribute to indicate server-rendered content
-        news_detail_html = f'''<article id="news-detail" class="w-full" data-server-rendered="true">
-      <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
-        <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" class="w-full h-full object-cover">
-      </div>
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-        <a href="/" class="inline-flex items-center gap-2 text-brand-green font-bold hover:underline mb-6">
-          <i class="fas fa-arrow-left"></i> Quay lại tin tức
-        </a>
-        {f'<span id="news-detail-date" class="text-sm text-gray-500 block mb-2">{date}</span>' if date else '<span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>'}
-        {f'<span id="news-detail-author" class="text-sm text-gray-500 block mb-4">Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="text-sm text-gray-500 block mb-4"></span>'}
-        <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{h1_custom}</h1>
-        {f'<h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-800 mb-4">{h2_custom}</h2>' if h2_custom else ''}
-        {f'<h3 id="news-detail-h3" class="text-xl font-semibold text-gray-700 mb-3">{h3_custom}</h3>' if h3_custom else ''}
-        <div id="news-detail-content" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none">{content}</div>
+        news_detail_html = f'''<article id="news-detail" class="w-full bg-brand-cream/40" data-server-rendered="true" itemscope itemtype="https://schema.org/Article">
+      <section class="relative w-full h-[45vh] min-h-[280px] bg-gray-900 overflow-hidden">
+        <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" loading="eager" class="absolute inset-0 w-full h-full object-cover" onerror="handleImageError(this)" itemprop="image">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+        <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8 md:pb-12">
+          <nav class="text-xs md:text-sm text-gray-200 mb-3" aria-label="Breadcrumb">
+            <ol class="flex flex-wrap items-center gap-1 md:gap-2">
+              <li><a href="/" class="hover:text-brand-light">Trang chủ</a><span class="mx-1">/</span></li>
+              <li><a href="/#news-list" class="hover:text-brand-light">Tin tức</a><span class="mx-1">/</span></li>
+              <li class="font-semibold text-white line-clamp-1">{h1_custom}</li>
+            </ol>
+          </nav>
+          <div class="flex flex-wrap items-center gap-3 text-xs md:text-sm text-gray-200/90 mb-2">
+            {f'<time id="news-detail-date" class="inline-flex items-center gap-1" datetime="{date}"><i class="far fa-calendar-alt"></i> {date}</time>' if date else '<time id="news-detail-date" class="inline-flex items-center gap-1" datetime=""></time>'}
+            {f'<span id="news-detail-author" class="inline-flex items-center gap-1"><i class="far fa-user"></i> Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="inline-flex items-center gap-1"></span>'}
+          </div>
+          <h1 id="news-detail-title" class="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3" itemprop="headline">{h1_custom}</h1>
+        </div>
+      </section>
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <a href="/" class="inline-flex items-center gap-2 text-brand-green font-semibold hover:underline">
+            <i class="fas fa-arrow-left"></i> Quay lại tin tức
+          </a>
+          <div class="flex items-center gap-3 text-sm text-gray-500">
+            <span class="uppercase tracking-wide text-xs font-semibold text-brand-green/80">Chia sẻ</span>
+            <div class="flex items-center gap-2">
+              <a href="https://www.facebook.com/sharer/sharer.php?u={share_url}" target="_blank" rel="noopener" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition" aria-label="Chia sẻ Facebook">
+                <i class="fab fa-facebook-f text-sm"></i>
+              </a>
+              <a href="https://twitter.com/intent/tweet?url={share_url}&text={title}" target="_blank" rel="noopener" class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center hover:bg-sky-600 transition" aria-label="Chia sẻ Twitter">
+                <i class="fab fa-x-twitter text-sm"></i>
+              </a>
+              <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href)" class="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center hover:bg-gray-200 transition" aria-label="Sao chép link">
+                <i class="fas fa-link text-sm"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        {f'<h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-900 mb-4">{h2_custom}</h2>' if h2_custom else ''}
+        {f'<h3 id="news-detail-h3" class="text-xl font-semibold text-gray-800 mb-3">{h3_custom}</h3>' if h3_custom else ''}
+        <div id="news-detail-content" class="prose prose-lg max-w-none text-gray-700 leading-relaxed" itemprop="articleBody">{content}</div>
+        <div class="mt-10 pt-6 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center">
+              <span class="font-semibold text-sm">{(author or "Mountain Harvest").strip()[:1]}</span>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-gray-900">
+                {author or "Mountain Harvest"}
+              </div>
+              <p class="text-xs text-gray-500">Tin tức &amp; chia sẻ từ Mountain Harvest.</p>
+            </div>
+          </div>
+          <a href="/#news-list" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-green hover:underline">
+            Xem thêm bài viết khác <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+        </div>
       </div>
     </article>'''
         

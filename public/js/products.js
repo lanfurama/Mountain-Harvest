@@ -161,7 +161,7 @@ function renderProducts() {
     return `<span class="absolute top-3 right-3 ${colorClass} text-xs font-bold px-2 py-1 rounded z-10 mr-1">${tag}</span>`;
   }).join('')}
             
-            <img src="${product.image}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500">
+            <img src="${product.image}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" onerror="handleImageError(this)">
             
             <div class="absolute bottom-0 left-0 right-0 bg-white/90 p-2 translate-y-full group-hover:translate-y-0 transition duration-300 flex justify-center gap-2 backdrop-blur-sm">
                 <button class="p-2 rounded-full bg-gray-100 hover:bg-brand-green hover:text-white transition" title="Xem nhanh" onclick="openProductModal(${product.id})">
@@ -206,7 +206,7 @@ function openProductModal(id) {
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div class="h-64 md:h-full rounded-lg overflow-hidden">
-            <img src="${product.image}" class="w-full h-full object-cover">
+            <img src="${product.image}" class="w-full h-full object-cover" onerror="handleImageError(this)">
         </div>
         <div>
             <span class="text-sm text-brand-green font-bold bg-green-100 px-2 py-1 rounded-full">${product.category}</span>

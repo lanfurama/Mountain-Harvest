@@ -2,6 +2,17 @@
  * Mountain Harvest - Main Application Logic
  */
 
+// Global fallback image for broken images
+const FALLBACK_IMAGE_URL = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoSsSHOOZkAWEtkYVziWjdfYurLpB8l4Ue6Q&s';
+
+function handleImageError(img) {
+  if (!img || img.dataset.fallbackApplied === 'true') return;
+  img.dataset.fallbackApplied = 'true';
+  img.src = FALLBACK_IMAGE_URL;
+  img.alt = (img.alt || '') + ' (Hình ảnh tạm thời - ảnh gốc bị lỗi)';
+  img.classList.add('bg-gray-100', 'object-contain');
+}
+
 async function loadData() {
   await Promise.all([loadProducts(1), loadNews(1)]);
 }

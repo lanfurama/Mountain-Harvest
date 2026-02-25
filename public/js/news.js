@@ -276,7 +276,7 @@ function renderNews() {
   container.innerHTML = list.map(news => `
     <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
         <div class="h-48 overflow-hidden">
-            <img src="${news.image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500">
+            <img src="${news.image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
         </div>
         <div class="p-6">
             <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date}</span>
