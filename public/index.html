@@ -13,6 +13,7 @@
   <meta name="twitter:title" content="Mountain Harvest - Tinh Hoa Nông Sản &amp; Nhu Yếu Phẩm">
   <meta name="twitter:description" content="Hệ thống phân phối nông sản và nhu yếu phẩm thiên nhiên hàng đầu.">
   <link rel="canonical" href="https://mountainharvest.vn/">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -351,10 +352,10 @@
     </section>
 
     <!-- News Section -->
-    <section class="mb-16">
+    <section id="news-section" class="mb-16" aria-labelledby="news-section-title">
       <div class="flex justify-between items-end mb-8">
         <div>
-          <h2 class="text-3xl font-bold text-gray-800" data-i18n="news.sectionTitle">Tin tức / News</h2>
+          <h2 id="news-section-title" class="text-3xl font-bold text-gray-800" data-i18n="news.sectionTitle">Tin tức / News</h2>
           <p class="text-gray-500 mt-2" data-i18n="news.sectionSubtitle">Cập nhật mới nhất từ Mountain Harvest</p>
         </div>
       </div>
@@ -385,20 +386,31 @@
     </div><!-- /#main-shop-content -->
 
     <!-- Blog post (full-width, chỉ hiện khi ?news=id) -->
-    <article id="news-detail" class="hidden w-full">
-      <div class="w-full h-[45vh] min-h-[280px] bg-gray-200 overflow-hidden">
-        <img id="news-detail-image" src="" alt="" class="w-full h-full object-cover" onerror="handleImageError(this)">
-      </div>
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-        <a href="/" id="news-detail-back" class="inline-flex items-center gap-2 text-brand-green font-bold hover:underline mb-6">
-          <i class="fas fa-arrow-left"></i> Quay lại tin tức
-        </a>
-        <span id="news-detail-date" class="text-sm text-gray-500 block mb-2"></span>
-        <span id="news-detail-author" class="text-sm text-gray-500 block mb-4"></span>
-        <h1 id="news-detail-title" class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight"></h1>
-        <h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-800 mb-4 hidden"></h2>
-        <h3 id="news-detail-h3" class="text-xl font-semibold text-gray-700 mb-3 hidden"></h3>
-        <div id="news-detail-content" class="text-gray-600 text-lg leading-relaxed prose prose-lg max-w-none"></div>
+    <article id="news-detail" class="hidden w-full news-detail-page" itemscope itemtype="https://schema.org/Article">
+      <header class="news-detail-hero relative w-full h-[50vh] min-h-[320px] max-h-[500px] overflow-hidden">
+        <img id="news-detail-image" src="" alt="" class="news-detail-hero-img w-full h-full object-cover" itemprop="image" onerror="handleImageError(this)">
+        <div class="news-detail-hero-overlay"></div>
+      </header>
+      <div class="news-detail-body max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-32 relative z-10">
+        <div class="news-detail-card bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div class="news-detail-meta px-6 md:px-10 pt-8 pb-4">
+            <a href="/" id="news-detail-back" class="news-detail-back inline-flex items-center gap-2 text-brand-green font-semibold hover:text-brand-darkGreen transition mb-6">
+              <i class="fas fa-arrow-left text-sm"></i> Quay lại tin tức
+            </a>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-6">
+              <time id="news-detail-date" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100" datetime="">
+                <i class="far fa-calendar-alt text-brand-green"></i>
+              </time>
+              <span id="news-detail-author" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100">
+                <i class="far fa-user text-brand-green"></i>
+              </span>
+            </div>
+            <h1 id="news-detail-title" class="news-detail-title text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight tracking-tight" itemprop="headline"></h1>
+            <h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-800 mt-6 mb-4 hidden"></h2>
+            <h3 id="news-detail-h3" class="text-xl font-semibold text-gray-700 mb-3 hidden"></h3>
+          </div>
+          <div id="news-detail-content" class="news-detail-content px-6 md:px-10 pb-10 md:pb-14 text-gray-600 text-lg leading-relaxed" itemprop="articleBody"></div>
+        </div>
       </div>
     </article>
 

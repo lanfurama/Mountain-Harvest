@@ -128,3 +128,107 @@ h4 {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
+/* News Detail Page */
+.news-detail-page {
+  padding-bottom: 4rem;
+}
+
+.news-detail-hero {
+  position: relative;
+  background: linear-gradient(135deg, #1a331d 0%, #2F5233 100%);
+}
+
+.news-detail-hero-img {
+  transition: transform 0.6s ease;
+}
+
+.news-detail-hero:hover .news-detail-hero-img {
+  transform: scale(1.02);
+}
+
+.news-detail-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.news-detail-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.news-detail-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+.news-detail-title {
+  font-family: 'Playfair Display', serif;
+  letter-spacing: -0.02em;
+}
+
+.news-detail-back {
+  font-size: 0.9375rem;
+}
+
+.news-detail-content {
+  font-size: 1.125rem;
+  line-height: 1.85;
+}
+
+.news-detail-content p {
+  margin-bottom: 1.25em;
+}
+
+.news-detail-content p:last-child {
+  margin-bottom: 0;
+}
+
+.news-detail-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5em 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.news-detail-content h2,
+.news-detail-content h3,
+.news-detail-content h4 {
+  font-family: 'Playfair Display', serif;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+  color: #1f2937;
+}
+
+.news-detail-content h2 { font-size: 1.5rem; }
+.news-detail-content h3 { font-size: 1.25rem; }
+.news-detail-content h4 { font-size: 1.125rem; }
+
+.news-detail-content ul,
+.news-detail-content ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+}
+
+.news-detail-content li {
+  margin-bottom: 0.5em;
+}
+
+.news-detail-content blockquote {
+  border-left: 4px solid #2F5233;
+  padding-left: 1.25em;
+  margin: 1.5em 0;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.news-detail-content a {
+  color: #2F5233;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.news-detail-content a:hover {
+  color: #1a331d;
+}

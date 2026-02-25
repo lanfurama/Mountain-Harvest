@@ -91,6 +91,18 @@ function renderNewsPagination() {
   });
 }
 
+function dateToIso(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const s = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    const d = parseInt(m[1], 10), M = parseInt(m[2], 10), y = m[3];
+    if (d <= 31 && M <= 12) return y + '-' + String(M).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+  return '';
+}
+
 function updateNewsSEO(news) {
   const title = news.title || 'Mountain Harvest';
   const description = news.content ? news.content.replace(/<[^>]*>/g, '').substring(0, 160) : 'Tin tức từ Mountain Harvest';
@@ -172,10 +184,16 @@ async function loadNewsDetail(id) {
     
     document.getElementById('news-detail-image').src = news.image || '';
     document.getElementById('news-detail-image').alt = news.title || '';
-    document.getElementById('news-detail-date').textContent = news.date ? news.date : '';
+    const dateEl = document.getElementById('news-detail-date');
+    if (dateEl) {
+      dateEl.innerHTML = news.date ? '<i class="far fa-calendar-alt text-brand-green"></i> ' + news.date : '';
+      dateEl.setAttribute('datetime', dateToIso(news.date || ''));
+      dateEl.classList.toggle('hidden', !news.date);
+    }
     const authorEl = document.getElementById('news-detail-author');
     if (authorEl) {
-      authorEl.textContent = news.author ? 'Tác giả: ' + news.author : '';
+      authorEl.innerHTML = news.author ? '<i class="far fa-user text-brand-green"></i> ' + news.author : '';
+      authorEl.classList.toggle('hidden', !news.author);
     }
     const h1Val = news.h1_custom || news.title || '';
     document.getElementById('news-detail-title').textContent = h1Val;
@@ -274,15 +292,15 @@ function renderNews() {
   const list = Array.isArray(newsData) ? newsData : [];
 
   container.innerHTML = list.map(news => `
-    <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
+    <article class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
         <div class="h-48 overflow-hidden">
-            <img src="${news.image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
+            <img src="${news.image}" alt="${(news.title || '').replace(/"/g, '&quot;')}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
         </div>
         <div class="p-6">
-            <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date}</span>
-            <a href="/news/${news.id}" class="font-bold text-lg mb-2 hover:text-brand-green cursor-pointer block">${news.title}</a>
+            <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
+            <h3 class="font-bold text-lg mb-2"><a href="/news/${news.id}" class="hover:text-brand-green cursor-pointer block">${news.title || ''}</a></h3>
             <p class="text-gray-600 text-sm mb-4 line-clamp-3">${news.content ? news.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : ''}</p>
         </div>
-    </div>
+    </article>
 `).join('');
 }

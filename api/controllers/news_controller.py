@@ -3,7 +3,7 @@ from typing import Optional
 from starlette.responses import JSONResponse, RedirectResponse, HTMLResponse
 from pathlib import Path
 from api.services.news_service import NewsService
-from api.views.news_views import NewsViews
+from api.views.news_views import NewsViews, normalize_content_headers
 
 _index_html_cache = None
 
@@ -53,6 +53,8 @@ class NewsController:
         news = await NewsService.get_news_by_id_with_mock_fallback(id)
         if not news:
             return JSONResponse({"error": "Not found"}, status_code=404)
+        if news.get("content"):
+            news = {**news, "content": normalize_content_headers(news["content"])}
         return JSONResponse(news)
     
     @staticmethod

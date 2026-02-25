@@ -1,7 +1,35 @@
 """News views for HTML rendering."""
 from html import escape
 import re
+from datetime import datetime
 from urllib.parse import urlparse
+
+
+def _date_to_iso(date_str: str) -> str:
+    """Chuyển date DD/MM/YYYY hoặc MM/DD/YYYY sang ISO YYYY-MM-DD."""
+    if not date_str or not isinstance(date_str, str):
+        return ""
+    s = date_str.strip()
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return ""
+
+
+def normalize_content_headers(html: str) -> str:
+    """Chuẩn SEO: H1->H2, H2->H3, H3->H4 trong content (page đã có H1)."""
+    if not html or not isinstance(html, str):
+        return html or ""
+    # Thay từ cao xuống thấp để tránh replace trùng
+    html = re.sub(r'<h3\b', '<h4', html, flags=re.IGNORECASE)
+    html = re.sub(r'</h3>', '</h4>', html)
+    html = re.sub(r'<h2\b', '<h3', html, flags=re.IGNORECASE)
+    html = re.sub(r'</h2>', '</h3>', html)
+    html = re.sub(r'<h1\b', '<h2', html, flags=re.IGNORECASE)
+    html = re.sub(r'</h1>', '</h2>', html)
+    return html
 
 
 class NewsViews:
@@ -26,7 +54,7 @@ class NewsViews:
             else:
                 image = base_url + "/" + image
         image = escape(image)
-        content = news.get("content", "")
+        content = normalize_content_headers(news.get("content", "") or "")
         author = escape(news.get("author", ""))
         date = escape(news.get("date", ""))
         # Estimate reading time from plain text content
@@ -132,7 +160,7 @@ class NewsViews:
         # Render news detail content (without hidden class)
         # Add data attribute to indicate server-rendered content
         news_detail_html = f'''<article id="news-detail" class="w-full bg-brand-cream/40" data-server-rendered="true" itemscope itemtype="https://schema.org/Article">
-      <section class="relative w-full h-[45vh] min-h-[280px] bg-gray-900 overflow-hidden">
+      <header class="relative w-full h-[45vh] min-h-[280px] bg-gray-900 overflow-hidden">
         <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" loading="eager" class="absolute inset-0 w-full h-full object-cover" onerror="handleImageError(this)" itemprop="image">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8 md:pb-12">
@@ -144,12 +172,12 @@ class NewsViews:
             </ol>
           </nav>
           <div class="flex flex-wrap items-center gap-3 text-xs md:text-sm text-gray-200/90 mb-2">
-            {f'<time id="news-detail-date" class="inline-flex items-center gap-1" datetime="{date}"><i class="far fa-calendar-alt"></i> {date}</time>' if date else '<time id="news-detail-date" class="inline-flex items-center gap-1" datetime=""></time>'}
+            {f'<time id="news-detail-date" class="inline-flex items-center gap-1" datetime="{_date_to_iso(date)}"><i class="far fa-calendar-alt"></i> {date}</time>' if date else '<time id="news-detail-date" class="inline-flex items-center gap-1" datetime=""></time>'}
             {f'<span id="news-detail-author" class="inline-flex items-center gap-1"><i class="far fa-user"></i> Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="inline-flex items-center gap-1"></span>'}
           </div>
           <h1 id="news-detail-title" class="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3" itemprop="headline">{h1_custom}</h1>
         </div>
-      </section>
+      </header>
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
           <a href="/" class="inline-flex items-center gap-2 text-brand-green font-semibold hover:underline">

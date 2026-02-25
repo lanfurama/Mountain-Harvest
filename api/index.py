@@ -31,6 +31,15 @@ app = FastHTML(
 rt = app.route
 
 
+# Favicon
+@rt("/favicon.svg")
+async def serve_favicon():
+    file_path = PUBLIC_DIR / "favicon.svg"
+    if file_path.exists():
+        return FileResponse(file_path, media_type="image/svg+xml")
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
+
 # Serve static files from subdirectories
 @rt("/css/{filename:str}")
 async def serve_css(filename: str):

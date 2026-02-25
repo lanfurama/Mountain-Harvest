@@ -174,16 +174,16 @@ class HomeViews:
             excerpt = html.escape(text.strip()[:150] + ("..." if len(text.strip()) > 150 else ""))
             href = f"/news/{nid}"
             card = f"""
-    <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
+    <article class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
       <div class="h-48 overflow-hidden">
-        <img src="{image}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
+        <img src="{image}" alt="{title}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
       </div>
       <div class="p-6">
         <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> {date}</span>
-        <a href="{href}" class="font-bold text-lg mb-2 hover:text-brand-green cursor-pointer block">{title}</a>
+        <h3 class="font-bold text-lg mb-2"><a href="{href}" class="hover:text-brand-green cursor-pointer block">{title}</a></h3>
         <p class="text-gray-600 text-sm mb-4 line-clamp-3">{excerpt}</p>
       </div>
-    </div>"""
+    </article>"""
             cards.append(card)
         return "".join(cards)
 
