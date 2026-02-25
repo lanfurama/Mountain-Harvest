@@ -9,4 +9,4 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api.index:app", host="0.0.0.0", port=8005, reload=True)
+    uvicorn.run("api.index:app", host="0.0.0.0", port=3005, reload=True)
