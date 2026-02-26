@@ -13,6 +13,7 @@ class ProductRepository:
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
+        search: Optional[str] = None,
         sort: str = "newest",
         page: int = 1,
         limit: int = 8,
@@ -25,6 +26,10 @@ class ProductRepository:
             base = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM products"
             where, params = [], []
             
+            if search and search.strip():
+                q = "%" + search.strip().replace("%", "\\%").replace("_", "\\_") + "%"
+                where.append("(name ILIKE $" + str(len(params) + 1) + " OR COALESCE(description,'') ILIKE $" + str(len(params) + 1) + ")")
+                params.append(q)
             if category:
                 where.append("category = $" + str(len(params) + 1))
                 params.append(category)
@@ -131,7 +136,17 @@ class ProductRepository:
         name: str,
         category: str,
         price: int,
+        slug: Optional[str] = None,
+        original_price: Optional[int] = None,
+        unit: Optional[str] = None,
         image: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        is_hot: bool = False,
+        discount: Optional[str] = None,
+        rating: float = 0.0,
+        reviews: int = 0,
+        sort_order: int = 0,
         meta_title: Optional[str] = None,
         meta_description: Optional[str] = None,
         h1_custom: Optional[str] = None,
@@ -142,8 +157,10 @@ class ProductRepository:
         async with get_conn() as conn:
             if conn:
                 await conn.execute(
-                    "INSERT INTO products (name, category, price, image, meta_title, meta_description, h1_custom, h2_custom, h3_custom) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                    name, category, price, image or None,
+                    """INSERT INTO products (name, category, price, slug, original_price, unit, image, description, tags, is_hot, discount, rating, reviews, sort_order, meta_title, meta_description, h1_custom, h2_custom, h3_custom)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)""",
+                    name, category, price, slug or None, original_price, unit or None, image or None, description or None,
+                    json.dumps(tags or []), is_hot, discount or None, rating, reviews, sort_order,
                     meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
                 )
     
@@ -153,11 +170,17 @@ class ProductRepository:
         name: str,
         category: str,
         price: int,
+        slug: Optional[str] = None,
         original_price: Optional[int] = None,
         unit: Optional[str] = None,
         image: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        is_hot: Optional[bool] = None,
+        discount: Optional[str] = None,
+        rating: Optional[float] = None,
+        reviews: Optional[int] = None,
+        sort_order: Optional[int] = None,
         meta_title: Optional[str] = None,
         meta_description: Optional[str] = None,
         h1_custom: Optional[str] = None,
@@ -167,13 +190,16 @@ class ProductRepository:
         """Update a product."""
         async with get_conn() as conn:
             if conn:
+                is_hot_val = is_hot if is_hot is not None else False
+                discount_val = discount
+                rating_val = float(rating) if rating is not None else 0.0
+                reviews_val = int(reviews) if reviews is not None else 0
+                sort_order_val = int(sort_order) if sort_order is not None else 0
                 await conn.execute("""
-                    UPDATE products SET name=$1, category=$2, price=$3, original_price=$4, unit=$5, image=$6, description=$7, tags=$8, meta_title=$9, meta_description=$10, h1_custom=$11, h2_custom=$12, h3_custom=$13
-                    WHERE id=$14
-                """, name, category, price,
-                    original_price,
-                    unit or None, image or None, description or None,
-                    json.dumps(tags or []),
+                    UPDATE products SET name=$1, category=$2, price=$3, slug=$4, original_price=$5, unit=$6, image=$7, description=$8, tags=$9, is_hot=$10, discount=$11, rating=$12, reviews=$13, sort_order=$14, meta_title=$15, meta_description=$16, h1_custom=$17, h2_custom=$18, h3_custom=$19
+                    WHERE id=$20
+                """, name, category, price, slug or None, original_price, unit or None, image or None, description or None,
+                    json.dumps(tags or []), is_hot_val, discount_val, rating_val, reviews_val, sort_order_val,
                     meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
                     id,
                 )

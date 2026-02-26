@@ -79,12 +79,12 @@ class HomeViews:
         {tags_html}
         <img src="{image}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" onerror="handleImageError(this)">
         <div class="absolute bottom-0 left-0 right-0 bg-white/90 p-2 translate-y-full group-hover:translate-y-0 transition duration-300 flex justify-center gap-2 backdrop-blur-sm">
-          <!-- Quick view could be re-enabled with SSR-backed modal if needed -->
+          <a href="/products/{pid}" class="px-3 py-1.5 rounded-full bg-brand-green text-white text-sm font-medium hover:bg-brand-darkGreen transition">Xem chi tiết</a>
         </div>
       </div>
       <div class="p-4">
         <div class="text-xs text-gray-500 mb-1">{category}</div>
-        <h3 class="font-bold text-lg text-gray-800 truncate">{name}</h3>
+        <h3 class="font-bold text-lg text-gray-800 truncate"><a href="/products/{pid}" class="hover:text-brand-green">{name}</a></h3>
         <div class="flex items-center my-2">
           <div class="flex text-yellow-400 text-xs">
             {stars_html}
@@ -247,6 +247,23 @@ class HomeViews:
         news_page_no = int(news_page.get("page") or 1)
 
         html_out = base_html
+
+        # Preserve filter form values (search, category, etc.)
+        search_val = html.escape(str(filters.get("search", "")))
+        html_out = re.sub(
+            r'(id="filter-search"[^>]*?)(?:\s+value="[^"]*")?',
+            r'\1 value="' + search_val + '"',
+            html_out,
+            count=1,
+        )
+        cat_val = filters.get("category", "")
+        if cat_val:
+            html_out = re.sub(
+                rf'<option value="{re.escape(cat_val)}">',
+                rf'<option value="{re.escape(cat_val)}" selected>',
+                html_out,
+                count=1,
+            )
 
         # Replace products grid
         products_html = HomeViews._render_products(products_items)

@@ -1,10 +1,10 @@
 """News model."""
-from typing import Optional
+from typing import Optional, Any
 
 
 class News:
     """News data model."""
-    
+
     def __init__(
         self,
         id: int,
@@ -19,6 +19,7 @@ class News:
         h1_custom: Optional[str] = None,
         h2_custom: Optional[str] = None,
         h3_custom: Optional[str] = None,
+        updated_at: Optional[Any] = None,
     ):
         self.id = id
         self.title = title
@@ -32,10 +33,11 @@ class News:
         self.h1_custom = h1_custom
         self.h2_custom = h2_custom
         self.h3_custom = h3_custom
-    
+        self.updated_at = updated_at
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON response."""
-        return {
+        d = {
             "id": self.id,
             "title": self.title,
             "image": self.image,
@@ -48,7 +50,10 @@ class News:
             "h2_custom": self.h2_custom,
             "h3_custom": self.h3_custom,
         }
-    
+        if self.updated_at is not None:
+            d["updated_at"] = self.updated_at
+        return d
+
     @classmethod
     def from_db_row(cls, row) -> "News":
         """Create News from database row."""
@@ -65,4 +70,5 @@ class News:
             h1_custom=row.get("h1_custom"),
             h2_custom=row.get("h2_custom"),
             h3_custom=row.get("h3_custom"),
+            updated_at=row.get("updated_at"),
         )

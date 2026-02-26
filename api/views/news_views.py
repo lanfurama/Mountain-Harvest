@@ -78,16 +78,33 @@ class NewsViews:
         base_html = re.sub(r'<title>.*?</title>', f'<title>{page_title}</title>', base_html, flags=re.IGNORECASE | re.DOTALL)
         
         # Update or add meta tags - use more flexible regex that matches any content value
+        date_iso = _date_to_iso(date)
+        date_pub_iso = date_iso + "T00:00:00+07:00" if date_iso else ""
+        updated_at = news.get("updated_at")
+        updated_iso = ""
+        if updated_at and hasattr(updated_at, 'strftime'):
+            try:
+                updated_iso = updated_at.strftime("%Y-%m-%dT%H:%M:%S+07:00")
+            except Exception:
+                updated_iso = date_pub_iso
+        elif updated_at:
+            updated_iso = str(updated_at)[:19].replace(" ", "T") + "+07:00" if len(str(updated_at)) >= 10 else date_pub_iso
+        if not updated_iso:
+            updated_iso = date_pub_iso
+
         meta_tags_to_update = [
             ('name', 'description', description_escaped),
             ('property', 'og:title', meta_title),
             ('property', 'og:description', description_escaped),
             ('property', 'og:url', current_url),
             ('property', 'og:type', 'article'),
+            ('property', 'article:published_time', date_pub_iso) if date_pub_iso else None,
+            ('property', 'article:modified_time', updated_iso) if updated_iso else None,
             ('name', 'twitter:title', meta_title),
             ('name', 'twitter:description', description_escaped),
             ('name', 'twitter:card', 'summary_large_image'),
         ]
+        meta_tags_to_update = [t for t in meta_tags_to_update if t is not None]
         
         # Add og:image and twitter:image only if cover image exists
         if image:
@@ -131,14 +148,15 @@ class NewsViews:
         hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
         base_html = base_html.replace('</head>', hide_style + '\n</head>')
         
-        # Add Article structured data (JSON-LD)
+        # Add Article and BreadcrumbList structured data (JSON-LD)
         article_schema = {
             "@context": "https://schema.org",
             "@type": "Article",
             "headline": h1_custom,
             "description": description_escaped,
             "image": image if image else "",
-            "datePublished": date if date else "",
+            "datePublished": date_pub_iso,
+            "dateModified": updated_iso if updated_iso else date_pub_iso,
             "author": {
                 "@type": "Person",
                 "name": author if author else "Mountain Harvest"
@@ -146,15 +164,22 @@ class NewsViews:
             "publisher": {
                 "@type": "Organization",
                 "name": "Mountain Harvest",
-                "logo": {
-                    "@type": "ImageObject",
-                    "url": ""
-                }
+                "logo": {"@type": "ImageObject", "url": ""}
             }
+        }
+        breadcrumb_schema = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Trang chủ", "item": current_url.split("/news")[0] + "/"},
+                {"@type": "ListItem", "position": 2, "name": "Tin tức", "item": current_url.split("/news")[0] + "/#news-list"},
+                {"@type": "ListItem", "position": 3, "name": h1_custom}
+            ]
         }
         import json
         schema_json = json.dumps(article_schema, ensure_ascii=False, indent=2)
-        schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>'
+        breadcrumb_json = json.dumps(breadcrumb_schema, ensure_ascii=False, indent=2)
+        schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>\n<script type="application/ld+json">\n{breadcrumb_json}\n</script>'
         base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
         
         # Render news detail content (without hidden class)

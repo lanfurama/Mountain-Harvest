@@ -7,6 +7,7 @@ let cart = JSON.parse(localStorage.getItem('cart')) || [];
 function saveCart() {
   localStorage.setItem('cart', JSON.stringify(cart));
   renderCart();
+  window.dispatchEvent(new CustomEvent('cartUpdated'));
 }
 
 function addToCart(source) {
@@ -34,7 +35,7 @@ function addToCart(source) {
 
   if (!product) return;
 
-  const existingItem = cart.find(item => item.id === productId);
+  const existingItem = cart.find(item => item.id === product.id);
   if (existingItem) {
     existingItem.quantity += 1;
   } else {

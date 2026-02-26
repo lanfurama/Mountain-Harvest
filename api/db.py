@@ -101,6 +101,22 @@ async def init_db():
                 name VARCHAR(100) NOT NULL,
                 sort_order INTEGER DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS pages (
+                id SERIAL PRIMARY KEY,
+                slug VARCHAR(255) UNIQUE NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                content TEXT,
+                meta_title VARCHAR(255),
+                meta_description TEXT,
+                sort_order INTEGER DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
         """)
         # Insert default hero if empty
         r = await conn.fetchval("SELECT COUNT(*) FROM hero")
@@ -173,6 +189,12 @@ async def init_db():
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='h3_custom') THEN
                         ALTER TABLE news ADD COLUMN h3_custom VARCHAR(255);
                     END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='slug') THEN
+                        ALTER TABLE news ADD COLUMN slug VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='news' AND column_name='updated_at') THEN
+                        ALTER TABLE news ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+                    END IF;
                 END $$;
             """)
         except Exception:
@@ -197,6 +219,9 @@ async def init_db():
                     END IF;
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='h3_custom') THEN
                         ALTER TABLE products ADD COLUMN h3_custom VARCHAR(255);
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='slug') THEN
+                        ALTER TABLE products ADD COLUMN slug VARCHAR(255);
                     END IF;
                 END $$;
             """)

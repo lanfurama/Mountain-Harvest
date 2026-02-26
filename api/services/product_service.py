@@ -8,9 +8,12 @@ class ProductService:
     """Service for Product business logic."""
     
     @staticmethod
-    def apply_filters(items: List[Product], category: Optional[str], price: Optional[str], standard: Optional[str]) -> List[Product]:
+    def apply_filters(items: List[Product], category: Optional[str], price: Optional[str], standard: Optional[str], search: Optional[str] = None) -> List[Product]:
         """Apply filters to product list."""
         out = items
+        if search and search.strip():
+            q = search.strip().lower()
+            out = [x for x in out if q in (x.name or "").lower() or q in (x.description or "").lower()]
         if category:
             out = [x for x in out if x.category == category]
         if price == "under50":
@@ -41,6 +44,7 @@ class ProductService:
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
+        search: Optional[str] = None,
         sort: str = "newest",
         page: int = 1,
         limit: int = 8,
@@ -50,6 +54,7 @@ class ProductService:
             category=category,
             price=price,
             standard=standard,
+            search=search,
             sort=sort,
             page=page,
             limit=limit,
@@ -81,6 +86,7 @@ class ProductService:
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
+        search: Optional[str] = None,
         sort: str = "newest",
         page: int = 1,
         limit: int = 8,
@@ -100,7 +106,7 @@ class ProductService:
                     if "isHot" in item_dict:
                         item_dict["is_hot"] = item_dict.pop("isHot")
                     products.append(Product(**item_dict))
-                products = ProductService.apply_filters(products, category, price, standard)
+                products = ProductService.apply_filters(products, category, price, standard, search)
                 total = len(products)
                 products = ProductService.sort_products(products, sort)
                 start = (page - 1) * limit
@@ -108,4 +114,4 @@ class ProductService:
                 total_pages = max(1, (total + limit - 1) // limit)
                 return items, total, total_pages
         
-        return await ProductService.get_products(category, price, standard, sort, page, limit)
+        return await ProductService.get_products(category, price, standard, search, sort, page, limit)

@@ -10,6 +10,8 @@ from api.controllers.product_controller import ProductController
 from api.controllers.news_controller import NewsController, _get_index_html
 from api.controllers.site_controller import SiteController
 from api.controllers.admin_controller import AdminController
+from api.controllers.seo_controller import generate_sitemap, generate_robots
+from api.controllers.page_controller import PageController
 from api.services.product_service import ProductService
 from api.services.news_service import NewsService
 from api.views.home_views import HomeViews
@@ -81,6 +83,33 @@ async def news_detail_page(req, id: int):
     return response
 
 
+# SEO
+@rt("/sitemap.xml")
+async def sitemap(req):
+    """Serve sitemap.xml."""
+    return await generate_sitemap(req)
+
+
+@rt("/robots.txt")
+async def robots(req):
+    """Serve robots.txt."""
+    return generate_robots(req)
+
+
+# Static page route - SSR
+@rt("/p/{slug:str}")
+async def page_detail(req, slug: str):
+    """Serve static page by slug."""
+    return await PageController.render_page(req, slug)
+
+
+# Product detail page route - SSR
+@rt("/products/{id:int}")
+async def product_detail_page(req, id: int):
+    """Serve product detail page - Server-side rendered."""
+    return await ProductController.render_product_page(req, id)
+
+
 # Frontend routes
 @rt("/")
 async def index(req):
@@ -106,6 +135,7 @@ async def index(req):
     category = qp.get("category") or None
     price = qp.get("price") or None
     standard = qp.get("standard") or None
+    search = qp.get("search") or None
     sort = qp.get("sort") or "newest"
 
     try:
@@ -122,6 +152,7 @@ async def index(req):
         category=category,
         price=price,
         standard=standard,
+        search=search,
         sort=sort,
         page=page,
         limit=8,
@@ -147,6 +178,7 @@ async def index(req):
         "category": category or "",
         "price": price or "",
         "standard": standard or "",
+        "search": search or "",
         "sort": sort or "newest",
     }
 
@@ -166,6 +198,7 @@ async def api_products(
     category: str = None,
     price: str = None,
     standard: str = None,
+    search: str = None,
     sort: str = "newest",
     page: int = 1,
     limit: int = 8,
@@ -175,6 +208,7 @@ async def api_products(
         category=category,
         price=price,
         standard=standard,
+        search=search,
         sort=sort,
         page=page,
         limit=limit,
@@ -205,11 +239,73 @@ async def api_site():
     return await SiteController.get_site()
 
 
+@rt("/api/pages")
+async def api_pages():
+    """Get public pages list (slug, title) for footer links."""
+    from api.repositories.page_repository import PageRepository
+    pages = await PageRepository.get_all()
+    items = [{"slug": p["slug"], "title": p.get("title", "")} for p in pages]
+    return JSONResponse({"items": items})
+
+
+@rt("/api/newsletter/subscribe")
+async def api_newsletter_subscribe(req):
+    """Subscribe email to newsletter."""
+    from api.db import get_conn
+    if req.method != "POST":
+        return JSONResponse({"ok": False, "error": "Method not allowed"}, status_code=405)
+    try:
+        body = await req.json() if req.headers.get("content-type", "").startswith("application/json") else {}
+        email = (body.get("email") or "").strip().lower()
+        if not email or "@" not in email:
+            return JSONResponse({"ok": False, "error": "Email không hợp lệ"}, status_code=400)
+        async with get_conn() as conn:
+            if not conn:
+                return JSONResponse({"ok": False, "error": "Hệ thống tạm thời không khả dụng"}, status_code=503)
+            await conn.execute(
+                "INSERT INTO newsletter_subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING",
+                email,
+            )
+        return JSONResponse({"ok": True, "message": "Đăng ký thành công!"})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
 # Admin routes
 @rt("/admin")
 async def admin_index(req):
     """Admin dashboard."""
     return await AdminController.index(req)
+
+
+@rt("/admin/categories")
+async def admin_categories(req):
+    """Admin categories list."""
+    return await AdminController.categories(req)
+
+
+@rt("/admin/categories/add")
+async def admin_category_add(req):
+    """Add category."""
+    return await AdminController.category_add(req)
+
+
+@rt("/admin/categories/{id:int}/edit")
+async def admin_category_edit(req, id: int):
+    """Edit category."""
+    return await AdminController.category_edit(req, id)
+
+
+@rt("/admin/categories/{id:int}")
+async def admin_category_update(req, id: int):
+    """Update category."""
+    return await AdminController.category_update(req, id)
+
+
+@rt("/admin/categories/{id:int}/delete")
+async def admin_category_delete(req, id: int):
+    """Delete category."""
+    return await AdminController.category_delete(req, id)
 
 
 @rt("/admin/products")
@@ -270,6 +366,36 @@ async def admin_news_update(req, id: int):
 async def admin_news_delete(req, id: int):
     """Delete news."""
     return await AdminController.news_delete(req, id)
+
+
+@rt("/admin/pages")
+async def admin_pages(req):
+    """Admin pages list."""
+    return await AdminController.pages(req)
+
+
+@rt("/admin/pages/add")
+async def admin_page_add(req):
+    """Add page."""
+    return await AdminController.page_add(req)
+
+
+@rt("/admin/pages/{id:int}/edit")
+async def admin_page_edit(req, id: int):
+    """Edit page."""
+    return await AdminController.page_edit(req, id)
+
+
+@rt("/admin/pages/{id:int}")
+async def admin_page_update(req, id: int):
+    """Update page."""
+    return await AdminController.page_update(req, id)
+
+
+@rt("/admin/pages/{id:int}/delete")
+async def admin_page_delete(req, id: int):
+    """Delete page."""
+    return await AdminController.page_delete(req, id)
 
 
 @rt("/admin/hero")
