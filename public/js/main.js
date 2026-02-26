@@ -3,7 +3,7 @@
  */
 
 // Global fallback image for broken images
-const FALLBACK_IMAGE_URL = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoSsSHOOZkAWEtkYVziWjdfYurLpB8l4Ue6Q&s';
+const FALLBACK_IMAGE_URL = 'https://placehold.co/600x400/e5e7eb/9ca3af?text=No+Image';
 
 function handleImageError(img) {
   if (!img || img.dataset.fallbackApplied === 'true') return;

@@ -38,7 +38,8 @@ const translations = {
       button: 'Shop Now'
     },
     filter: {
-      title: 'Product Filters'
+      title: 'Product Filters',
+      clearAll: 'Clear filters'
     },
     products: {
       featured: 'Featured Products',
@@ -106,7 +107,8 @@ const translations = {
       button: 'Mua Ngay'
     },
     filter: {
-      title: 'Bộ lọc sản phẩm'
+      title: 'Bộ lọc sản phẩm',
+      clearAll: 'Xóa bộ lọc'
     },
     products: {
       featured: 'Sản Phẩm Nổi Bật',

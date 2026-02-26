@@ -144,8 +144,8 @@ class NewsViews:
             preload_tag = f'<link rel="preload" as="image" href="{image}" fetchpriority="high">'
             base_html = base_html.replace('</head>', preload_tag + '\n</head>', 1)
 
-        # Add style to hide shop content and hero
-        hide_style = '<style>header.relative, #main-shop-content { display: none !important; }</style>'
+        # Add style to hide shop content and main hero only (not news-detail header)
+        hide_style = '<style>body > header, #main-shop-content { display: none !important; }</style>'
         base_html = base_html.replace('</head>', hide_style + '\n</head>')
         
         # Add Article and BreadcrumbList structured data (JSON-LD)

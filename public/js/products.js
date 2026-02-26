@@ -8,7 +8,9 @@ let productsPage = 1, productsTotal = 0, productsTotalPages = 0;
 let productsLoading = false;
 
 function getFilterState() {
+  const searchEl = document.getElementById('filter-search');
   return {
+    search: (searchEl && searchEl.value && searchEl.value.trim()) || '',
     category: (document.getElementById('filter-category') && document.getElementById('filter-category').value) || '',
     price: (document.getElementById('filter-price') && document.getElementById('filter-price').value) || '',
     standard: (document.getElementById('filter-standard') && document.getElementById('filter-standard').value) || '',
@@ -19,6 +21,7 @@ function getFilterState() {
 function buildProductsUrl(page) {
   const f = getFilterState();
   const params = new URLSearchParams({ page: String(page), limit: String(PRODUCTS_PER_PAGE), sort: f.sort });
+  if (f.search) params.set('search', f.search);
   if (f.category) params.set('category', f.category);
   if (f.price) params.set('price', f.price);
   if (f.standard) params.set('standard', f.standard);
@@ -137,10 +140,14 @@ function renderActiveFilters() {
 }
 
 function clearAllFilters() {
+  const searchEl = document.getElementById('filter-search');
+  if (searchEl) searchEl.value = '';
   ['filter-category', 'filter-price', 'filter-standard'].forEach(function (id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const sortEl = document.getElementById('filter-sort');
+  if (sortEl) sortEl.value = 'newest';
   loadProducts(1);
 }
 
