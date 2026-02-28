@@ -59,7 +59,10 @@ class SiteConfigRepository:
         async with get_conn() as conn:
             if conn:
                 row = await conn.fetchrow("SELECT value FROM site_config WHERE key='topbar'")
-                existing = dict(row["value"]) if row else {}
+                existing = row["value"] if row and row["value"] is not None else {}
+                if not isinstance(existing, dict):
+                    existing = json.loads(existing) if isinstance(existing, str) else {}
+                existing = dict(existing)
                 existing.update({"freeShipping": free_shipping, "hotline": hotline, "support": support or existing.get("support", "")})
                 await conn.execute(
                     "INSERT INTO site_config (key, value) VALUES ('topbar', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = $1::jsonb",
@@ -78,7 +81,10 @@ class SiteConfigRepository:
         async with get_conn() as conn:
             if conn:
                 row = await conn.fetchrow("SELECT value FROM site_config WHERE key='footer'")
-                existing = dict(row["value"]) if row else {}
+                existing = row["value"] if row and row["value"] is not None else {}
+                if not isinstance(existing, dict):
+                    existing = json.loads(existing) if isinstance(existing, str) else {}
+                existing = dict(existing)
                 existing.update({
                     "address": address,
                     "phone": phone,
