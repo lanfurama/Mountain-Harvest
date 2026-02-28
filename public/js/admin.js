@@ -45,15 +45,42 @@
 
   function showToast(msg, type) {
     var el = document.getElementById('admin-toast');
+    var progressEl = document.getElementById('admin-toast-progress');
     if (!el) return;
-    el.innerHTML = '<i class="fas fa-' + (type === 'error' ? 'exclamation-circle' : 'check-circle') + '"></i> <span>' + msg + '</span>';
-    el.className = 'fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg ' +
-      (type === 'error' ? 'bg-red-600' : 'bg-[#2F5233]') + ' text-white transform transition-all duration-300';
-    el.classList.remove('hidden');
+    
+    var icons = {
+      'success': 'check-circle',
+      'error': 'exclamation-circle',
+      'warning': 'exclamation-triangle',
+      'info': 'info-circle'
+    };
+    var colors = {
+      'success': 'bg-green-600',
+      'error': 'bg-red-600',
+      'warning': 'bg-yellow-600',
+      'info': 'bg-blue-600'
+    };
+    
+    var icon = icons[type] || icons['success'];
+    var color = colors[type] || colors['success'];
+    
+    el.innerHTML = '<div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><i class="fas fa-' + icon + '"></i></div><span class="font-medium">' + msg + '</span></div>';
+    if (progressEl) {
+      progressEl.style.width = '100%';
+      progressEl.style.transition = 'width 3s linear';
+    }
+    el.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-4 rounded-xl shadow-2xl ' + color + ' text-white transform transition-all duration-300 min-w-[300px]';
+    el.classList.remove('hidden', 'opacity-0', 'translate-y-4');
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+    
     setTimeout(function() {
-      el.classList.add('opacity-0', 'translate-y-4');
+      if (progressEl) progressEl.style.width = '0%';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(1rem)';
       setTimeout(function() {
         el.classList.add('hidden');
+        if (progressEl) progressEl.style.width = '100%';
       }, 300);
     }, 3000);
   }
@@ -85,15 +112,35 @@
     });
   }
 
-  function closeConfirm() {
-    if (confirmModal) confirmModal.classList.add('hidden');
-    pendingAction = null;
-  }
 
   function openConfirm(msg, formOrHref) {
     if (confirmMsg) confirmMsg.textContent = msg;
     pendingAction = formOrHref || null;
-    if (confirmModal) confirmModal.classList.remove('hidden');
+    if (confirmModal) {
+      confirmModal.classList.remove('hidden');
+      var dialog = document.getElementById('admin-confirm-dialog');
+      if (dialog) {
+        setTimeout(function() {
+          dialog.classList.remove('scale-95', 'opacity-0');
+          dialog.classList.add('scale-100', 'opacity-100');
+        }, 10);
+      }
+    }
+  }
+  
+  function closeConfirm() {
+    var dialog = document.getElementById('admin-confirm-dialog');
+    if (dialog) {
+      dialog.classList.remove('scale-100', 'opacity-100');
+      dialog.classList.add('scale-95', 'opacity-0');
+      setTimeout(function() {
+        if (confirmModal) confirmModal.classList.add('hidden');
+        pendingAction = null;
+      }, 300);
+    } else {
+      if (confirmModal) confirmModal.classList.add('hidden');
+      pendingAction = null;
+    }
   }
 
   // Delegate [data-confirm] clicks
@@ -110,17 +157,41 @@
 
   // Form loading state
   document.querySelectorAll('form').forEach(function(form) {
-    form.addEventListener('submit', function() {
+    form.addEventListener('submit', function(e) {
       var btn = form.querySelector('button[type="submit"]');
       if (btn && !btn.disabled) {
         btn.disabled = true;
         var origHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang lưu...';
+        var origClasses = btn.className;
+        btn.className = origClasses + ' opacity-75 cursor-not-allowed';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang xử lý...';
+        
+        // Re-enable after 10 seconds as fallback
         setTimeout(function() {
           btn.disabled = false;
+          btn.className = origClasses;
           btn.innerHTML = origHtml;
-        }, 5000);
+        }, 10000);
       }
     });
   });
+  
+  // SEO section toggle
+  var seoToggle = document.getElementById('seo-toggle');
+  if (seoToggle) {
+    seoToggle.addEventListener('click', function() {
+      var section = document.getElementById('seo-section');
+      var chevron = document.getElementById('seo-chevron');
+      if (section && chevron) {
+        section.classList.toggle('hidden');
+        chevron.classList.toggle('rotate-180');
+      }
+    });
+  }
+  
+  // Initialize SEO section as hidden
+  var seoSection = document.getElementById('seo-section');
+  if (seoSection) {
+    seoSection.classList.add('hidden');
+  }
 })();
