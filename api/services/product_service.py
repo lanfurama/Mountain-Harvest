@@ -40,7 +40,7 @@ class ProductService:
         return sorted(items, key=lambda x: x.id, reverse=True)
     
     @staticmethod
-    async def get_products(
+    def get_products(
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
@@ -50,7 +50,7 @@ class ProductService:
         limit: int = 8,
     ) -> tuple[List[dict], int, int]:
         """Get products with filters, sorting, and pagination."""
-        products, total = await ProductRepository.get_all(
+        products, total = ProductRepository.get_all(
             category=category,
             price=price,
             standard=standard,
@@ -64,9 +64,9 @@ class ProductService:
         return items, total, total_pages
     
     @staticmethod
-    async def get_product(id: int) -> Optional[dict]:
+    def get_product(id: int) -> Optional[dict]:
         """Get product by ID."""
-        product = await ProductRepository.get_by_id(id)
+        product = ProductRepository.get_by_id(id)
         return product.to_dict() if product else None
     
     @staticmethod
@@ -82,7 +82,7 @@ class ProductService:
         ]
     
     @staticmethod
-    async def get_products_with_mock_fallback(
+    def get_products_with_mock_fallback(
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
@@ -92,26 +92,23 @@ class ProductService:
         limit: int = 8,
     ) -> tuple[List[dict], int, int]:
         """Get products with mock fallback if database unavailable."""
-        from api.db import get_conn
-        async with get_conn() as conn:
-            if not conn:
-                all_items = ProductService._mock_products()
-                # Convert mock dicts to Product objects
-                products = []
-                for item in all_items:
-                    # Map originalPrice to original_price
-                    item_dict = dict(item)
-                    if "originalPrice" in item_dict:
-                        item_dict["original_price"] = item_dict.pop("originalPrice")
-                    if "isHot" in item_dict:
-                        item_dict["is_hot"] = item_dict.pop("isHot")
-                    products.append(Product(**item_dict))
-                products = ProductService.apply_filters(products, category, price, standard, search)
-                total = len(products)
-                products = ProductService.sort_products(products, sort)
-                start = (page - 1) * limit
-                items = [p.to_dict() for p in products[start : start + limit]]
-                total_pages = max(1, (total + limit - 1) // limit)
-                return items, total, total_pages
-        
-        return await ProductService.get_products(category, price, standard, search, sort, page, limit)
+        try:
+            return ProductService.get_products(category, price, standard, search, sort, page, limit)
+        except Exception:
+            # Fallback to mock data
+            all_items = ProductService._mock_products()
+            products = []
+            for item in all_items:
+                item_dict = dict(item)
+                if "originalPrice" in item_dict:
+                    item_dict["original_price"] = item_dict.pop("originalPrice")
+                if "isHot" in item_dict:
+                    item_dict["is_hot"] = item_dict.pop("isHot")
+                products.append(Product(**item_dict))
+            products = ProductService.apply_filters(products, category, price, standard, search)
+            total = len(products)
+            products = ProductService.sort_products(products, sort)
+            start = (page - 1) * limit
+            items = [p.to_dict() for p in products[start : start + limit]]
+            total_pages = max(1, (total + limit - 1) // limit)
+            return items, total, total_pages

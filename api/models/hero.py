@@ -1,27 +1,19 @@
 """Hero model."""
-from typing import Optional
+from django.db import models
 
 
-class Hero:
+class Hero(models.Model):
     """Hero banner data model."""
-    
-    def __init__(
-        self,
-        id: int = 1,
-        promo: Optional[str] = None,
-        title: Optional[str] = None,
-        subtitle: Optional[str] = None,
-        image: Optional[str] = None,
-        button_text: Optional[str] = None,
-    ):
-        self.id = id
-        self.promo = promo
-        self.title = title
-        self.subtitle = subtitle
-        self.image = image
-        self.button_text = button_text
-    
-    def to_dict(self) -> dict:
+    promo = models.CharField(max_length=100, null=True, blank=True)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    subtitle = models.TextField(null=True, blank=True)
+    image = models.TextField(null=True, blank=True)
+    button_text = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        db_table = 'hero'
+
+    def to_dict(self):
         """Convert to dictionary for JSON response."""
         return {
             "promo": self.promo or "",
@@ -30,15 +22,3 @@ class Hero:
             "image": self.image or "",
             "buttonText": self.button_text or "",
         }
-    
-    @classmethod
-    def from_db_row(cls, row) -> "Hero":
-        """Create Hero from database row."""
-        return cls(
-            id=row.get("id", 1),
-            promo=row.get("promo"),
-            title=row.get("title"),
-            subtitle=row.get("subtitle"),
-            image=row.get("image"),
-            button_text=row.get("button_text"),
-        )

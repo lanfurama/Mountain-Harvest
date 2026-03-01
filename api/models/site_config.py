@@ -1,29 +1,18 @@
 """SiteConfig model."""
-from typing import Optional, Dict, Any
+from django.db import models
 
 
-class SiteConfig:
+class SiteConfig(models.Model):
     """Site configuration data model."""
-    
-    def __init__(
-        self,
-        key: str,
-        value: Any,
-    ):
-        self.key = key
-        self.value = value
-    
-    def to_dict(self) -> Dict[str, Any]:
+    key = models.CharField(max_length=100, primary_key=True)
+    value = models.JSONField()
+
+    class Meta:
+        db_table = 'site_config'
+
+    def to_dict(self):
         """Convert to dictionary."""
         return {
             "key": self.key,
             "value": self.value,
         }
-    
-    @classmethod
-    def from_db_row(cls, row) -> "SiteConfig":
-        """Create SiteConfig from database row."""
-        return cls(
-            key=row["key"],
-            value=row["value"],
-        )

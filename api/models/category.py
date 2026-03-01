@@ -1,32 +1,19 @@
 """Category model."""
-from typing import Optional
+from django.db import models
 
 
-class Category:
+class Category(models.Model):
     """Category data model."""
-    
-    def __init__(
-        self,
-        id: int,
-        name: str,
-        sort_order: int = 0,
-    ):
-        self.id = id
-        self.name = name
-        self.sort_order = sort_order
-    
-    def to_dict(self) -> dict:
+    name = models.CharField(max_length=100)
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'categories'
+        ordering = ['sort_order', 'id']
+
+    def to_dict(self):
         """Convert to dictionary."""
         return {
             "id": self.id,
             "name": self.name,
         }
-    
-    @classmethod
-    def from_db_row(cls, row) -> "Category":
-        """Create Category from database row."""
-        return cls(
-            id=row["id"],
-            name=row["name"],
-            sort_order=row.get("sort_order", 0),
-        )

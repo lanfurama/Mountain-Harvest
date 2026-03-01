@@ -1,7 +1,7 @@
 """Product repository for data access."""
 import json
 from typing import List, Optional
-from api.db import get_conn
+from django.db.models import Q, Count
 from api.models.product import Product
 
 
@@ -9,7 +9,7 @@ class ProductRepository:
     """Repository for Product data access."""
     
     @staticmethod
-    async def get_all(
+    def get_all(
         category: Optional[str] = None,
         price: Optional[str] = None,
         standard: Optional[str] = None,
@@ -19,78 +19,54 @@ class ProductRepository:
         limit: int = 8,
     ) -> tuple[List[Product], int]:
         """Get products with filters, sorting, and pagination."""
-        async with get_conn() as conn:
-            if not conn:
-                return [], 0
-            
-            base = "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM products"
-            where, params = [], []
-            
-            if search and search.strip():
-                q = "%" + search.strip().replace("%", "\\%").replace("_", "\\_") + "%"
-                where.append("(name ILIKE $" + str(len(params) + 1) + " OR COALESCE(description,'') ILIKE $" + str(len(params) + 1) + ")")
-                params.append(q)
-            if category:
-                where.append("category = $" + str(len(params) + 1))
-                params.append(category)
-            if price == "under50":
-                where.append("price < 50000")
-            elif price == "50-200":
-                where.append("price >= 50000 AND price <= 200000")
-            elif price == "over200":
-                where.append("price > 200000")
-            if standard:
-                where.append("tags @> $" + str(len(params) + 1) + "::jsonb")
-                params.append(json.dumps([standard]))
-            
-            where_sql = " AND ".join(where) if where else "1=1"
-            
-            order_map = {
-                "newest": "ORDER BY id DESC",
-                "bestseller": "ORDER BY reviews DESC NULLS LAST, id DESC",
-                "price_asc": "ORDER BY price ASC, id DESC",
-                "price_desc": "ORDER BY price DESC, id DESC",
-            }
-            order_sql = order_map.get((sort or "newest").lower(), order_map["newest"])
-            
-            count_row = await conn.fetchrow(f"SELECT COUNT(*) as n FROM products WHERE {where_sql}", *params)
-            total = count_row["n"] or 0
-            
-            offset = (page - 1) * limit
-            params.extend([limit, offset])
-            rows = await conn.fetch(
-                f"{base} WHERE {where_sql} {order_sql} LIMIT ${len(params)-1} OFFSET ${len(params)}",
-                *params,
+        queryset = Product.objects.all()
+        
+        if search and search.strip():
+            queryset = queryset.filter(
+                Q(name__icontains=search.strip()) | 
+                Q(description__icontains=search.strip())
             )
-            
-            products = [Product.from_db_row(row) for row in rows]
-            return products, total
+        if category:
+            queryset = queryset.filter(category=category)
+        if price == "under50":
+            queryset = queryset.filter(price__lt=50000)
+        elif price == "50-200":
+            queryset = queryset.filter(price__gte=50000, price__lte=200000)
+        elif price == "over200":
+            queryset = queryset.filter(price__gt=200000)
+        if standard:
+            queryset = queryset.filter(tags__contains=[standard])
+        
+        total = queryset.count()
+        
+        order_map = {
+            "newest": "-id",
+            "bestseller": "-reviews",
+            "price_asc": "price",
+            "price_desc": "-price",
+        }
+        order_by = order_map.get((sort or "newest").lower(), "-id")
+        queryset = queryset.order_by(order_by)
+        
+        offset = (page - 1) * limit
+        products = list(queryset[offset:offset + limit])
+        return products, total
     
     @staticmethod
-    async def get_by_id(id: int) -> Optional[Product]:
+    def get_by_id(id: int) -> Optional[Product]:
         """Get product by ID."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow(
-                "SELECT id, name, category, price, original_price, unit, image, rating, reviews, is_hot, discount, tags, description, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM products WHERE id = $1",
-                id,
-            )
-            if not row:
-                return None
-            return Product.from_db_row(row)
+        try:
+            return Product.objects.get(id=id)
+        except Product.DoesNotExist:
+            return None
     
     @staticmethod
-    async def get_categories() -> List[str]:
+    def get_categories() -> List[str]:
         """Get distinct categories."""
-        async with get_conn() as conn:
-            if not conn:
-                return []
-            rows = await conn.fetch("SELECT DISTINCT category FROM products ORDER BY category")
-            return [r["category"] for r in rows]
+        return list(Product.objects.values_list('category', flat=True).distinct().order_by('category'))
     
     @staticmethod
-    async def search(
+    def search(
         category: Optional[str] = None,
         search: Optional[str] = None,
         sort: str = "newest",
@@ -98,41 +74,31 @@ class ProductRepository:
         per_page: int = 10,
     ) -> tuple[List[dict], int]:
         """Search products for admin."""
-        async with get_conn() as conn:
-            if not conn:
-                return [], 0
-            
-            where, params = [], []
-            if category:
-                where.append("category = $" + str(len(params) + 1))
-                params.append(category)
-            if search:
-                where.append("name ILIKE $" + str(len(params) + 1))
-                params.append(f"%{search}%")
-            
-            where_sql = " AND ".join(where) if where else "1=1"
-            
-            order_sql = {
-                "newest": "ORDER BY id DESC",
-                "oldest": "ORDER BY id ASC",
-                "price_asc": "ORDER BY price ASC",
-                "price_desc": "ORDER BY price DESC",
-                "name": "ORDER BY name ASC",
-            }.get(sort, "ORDER BY id DESC")
-            
-            count_row = await conn.fetchrow(f"SELECT COUNT(*) as n FROM products WHERE {where_sql}", *params)
-            total = count_row["n"]
-            
-            offset = (page - 1) * per_page
-            rows = await conn.fetch(
-                f"SELECT id, name, category, price, image FROM products WHERE {where_sql} {order_sql} LIMIT ${len(params)+1} OFFSET ${len(params)+2}",
-                *params, per_page, offset,
-            )
-            
-            return [dict(row) for row in rows], total
+        queryset = Product.objects.all()
+        
+        if category:
+            queryset = queryset.filter(category=category)
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        
+        total = queryset.count()
+        
+        order_map = {
+            "newest": "-id",
+            "oldest": "id",
+            "price_asc": "price",
+            "price_desc": "-price",
+            "name": "name",
+        }
+        order_by = order_map.get(sort, "-id")
+        queryset = queryset.order_by(order_by)
+        
+        offset = (page - 1) * per_page
+        products = queryset[offset:offset + per_page]
+        return [{"id": p.id, "name": p.name, "category": p.category, "price": p.price, "image": p.image} for p in products], total
     
     @staticmethod
-    async def create(
+    def create(
         name: str,
         category: str,
         price: int,
@@ -154,18 +120,30 @@ class ProductRepository:
         h3_custom: Optional[str] = None,
     ) -> None:
         """Create a new product."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute(
-                    """INSERT INTO products (name, category, price, slug, original_price, unit, image, description, tags, is_hot, discount, rating, reviews, sort_order, meta_title, meta_description, h1_custom, h2_custom, h3_custom)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)""",
-                    name, category, price, slug or None, original_price, unit or None, image or None, description or None,
-                    json.dumps(tags or []), is_hot, discount or None, rating, reviews, sort_order,
-                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
-                )
+        Product.objects.create(
+            name=name,
+            category=category,
+            price=price,
+            slug=slug,
+            original_price=original_price,
+            unit=unit,
+            image=image,
+            description=description,
+            tags=tags or [],
+            is_hot=is_hot,
+            discount=discount,
+            rating=rating,
+            reviews=reviews,
+            sort_order=sort_order,
+            meta_title=meta_title,
+            meta_description=meta_description,
+            h1_custom=h1_custom,
+            h2_custom=h2_custom,
+            h3_custom=h3_custom,
+        )
     
     @staticmethod
-    async def update(
+    def update(
         id: int,
         name: str,
         category: str,
@@ -188,34 +166,75 @@ class ProductRepository:
         h3_custom: Optional[str] = None,
     ) -> None:
         """Update a product."""
-        async with get_conn() as conn:
-            if conn:
-                is_hot_val = is_hot if is_hot is not None else False
-                discount_val = discount
-                rating_val = float(rating) if rating is not None else 0.0
-                reviews_val = int(reviews) if reviews is not None else 0
-                sort_order_val = int(sort_order) if sort_order is not None else 0
-                await conn.execute("""
-                    UPDATE products SET name=$1, category=$2, price=$3, slug=$4, original_price=$5, unit=$6, image=$7, description=$8, tags=$9, is_hot=$10, discount=$11, rating=$12, reviews=$13, sort_order=$14, meta_title=$15, meta_description=$16, h1_custom=$17, h2_custom=$18, h3_custom=$19
-                    WHERE id=$20
-                """, name, category, price, slug or None, original_price, unit or None, image or None, description or None,
-                    json.dumps(tags or []), is_hot_val, discount_val, rating_val, reviews_val, sort_order_val,
-                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
-                    id,
-                )
+        product = Product.objects.get(id=id)
+        product.name = name
+        product.category = category
+        product.price = price
+        if slug is not None:
+            product.slug = slug
+        if original_price is not None:
+            product.original_price = original_price
+        if unit is not None:
+            product.unit = unit
+        if image is not None:
+            product.image = image
+        if description is not None:
+            product.description = description
+        if tags is not None:
+            product.tags = tags
+        if is_hot is not None:
+            product.is_hot = is_hot
+        if discount is not None:
+            product.discount = discount
+        if rating is not None:
+            product.rating = rating
+        if reviews is not None:
+            product.reviews = reviews
+        if sort_order is not None:
+            product.sort_order = sort_order
+        if meta_title is not None:
+            product.meta_title = meta_title
+        if meta_description is not None:
+            product.meta_description = meta_description
+        if h1_custom is not None:
+            product.h1_custom = h1_custom
+        if h2_custom is not None:
+            product.h2_custom = h2_custom
+        if h3_custom is not None:
+            product.h3_custom = h3_custom
+        product.save()
     
     @staticmethod
-    async def get_by_id_for_edit(id: int) -> Optional[dict]:
+    def get_by_id_for_edit(id: int) -> Optional[dict]:
         """Get product by ID for editing."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow("SELECT * FROM products WHERE id = $1", id)
-            return dict(row) if row else None
+        try:
+            product = Product.objects.get(id=id)
+            return {
+                "id": product.id,
+                "name": product.name,
+                "category": product.category,
+                "price": product.price,
+                "slug": product.slug,
+                "original_price": product.original_price,
+                "unit": product.unit,
+                "image": product.image,
+                "description": product.description,
+                "tags": product.tags,
+                "is_hot": product.is_hot,
+                "discount": product.discount,
+                "rating": float(product.rating),
+                "reviews": product.reviews,
+                "sort_order": product.sort_order,
+                "meta_title": product.meta_title,
+                "meta_description": product.meta_description,
+                "h1_custom": product.h1_custom,
+                "h2_custom": product.h2_custom,
+                "h3_custom": product.h3_custom,
+            }
+        except Product.DoesNotExist:
+            return None
     
     @staticmethod
-    async def delete(id: int) -> None:
+    def delete(id: int) -> None:
         """Delete a product."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute("DELETE FROM products WHERE id = $1", id)
+        Product.objects.filter(id=id).delete()

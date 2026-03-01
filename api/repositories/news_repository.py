@@ -1,6 +1,6 @@
 """News repository for data access."""
 from typing import List, Optional
-from api.db import get_conn
+from django.db.models import Q
 from api.models.news import News
 
 
@@ -8,66 +8,48 @@ class NewsRepository:
     """Repository for News data access."""
     
     @staticmethod
-    async def get_all(page: int = 1, limit: int = 6) -> tuple[List[News], int]:
-        """Get all news with pagination."""
-        async with get_conn() as conn:
-            if not conn:
-                return [], 0
-            
-            count_row = await conn.fetchrow("SELECT COUNT(*) as n FROM news")
-            total = count_row["n"] or 0
-            
-            offset = (page - 1) * limit
-            rows = await conn.fetch(
-                "SELECT id, title, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom FROM news ORDER BY sort_order, id LIMIT $1 OFFSET $2",
-                limit, offset,
-            )
-            
-            news_list = [News.from_db_row(row) for row in rows]
-            return news_list, total
+    def get_all(page: int = 1, limit: int = 6) -> tuple[List[News], int]:
+        """Get all news with pagination, sorted by newest first."""
+        queryset = News.objects.all()
+        total = queryset.count()
+        
+        offset = (page - 1) * limit
+        # Sort by id descending (newest first), then by sort_order if needed
+        news_list = list(queryset.order_by('-id', 'sort_order')[offset:offset + limit])
+        return news_list, total
     
     @staticmethod
-    async def get_by_id(id: int) -> Optional[News]:
+    def get_by_id(id: int) -> Optional[News]:
         """Get news by ID."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow("SELECT id, title, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom, updated_at FROM news WHERE id = $1", id)
-            if not row:
-                return None
-            return News.from_db_row(row)
+        try:
+            return News.objects.get(id=id)
+        except News.DoesNotExist:
+            return None
     
     @staticmethod
-    async def search(
+    def search(
         search: Optional[str] = None,
         page: int = 1,
         per_page: int = 10,
     ) -> tuple[List[dict], int]:
         """Search news for admin."""
-        async with get_conn() as conn:
-            if not conn:
-                return [], 0
-            
-            where, params = [], []
-            if search:
-                where.append("(title ILIKE $1 OR content ILIKE $1 OR author ILIKE $1)")
-                params.append(f"%{search}%")
-            
-            where_sql = " AND ".join(where) if where else "1=1"
-            
-            count_row = await conn.fetchrow(f"SELECT COUNT(*) as n FROM news WHERE {where_sql}", *params)
-            total = count_row["n"]
-            
-            offset = (page - 1) * per_page
-            rows = await conn.fetch(
-                f"SELECT id, title, date, author, image FROM news WHERE {where_sql} ORDER BY sort_order, id DESC LIMIT ${len(params)+1} OFFSET ${len(params)+2}",
-                *params, per_page, offset,
+        queryset = News.objects.all()
+        
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(content__icontains=search) | 
+                Q(author__icontains=search)
             )
-            
-            return [dict(row) for row in rows], total
+        
+        total = queryset.count()
+        
+        offset = (page - 1) * per_page
+        news_items = queryset.order_by('sort_order', '-id')[offset:offset + per_page]
+        return [{"id": n.id, "title": n.title, "date": n.date, "author": n.author, "image": n.image} for n in news_items], total
     
     @staticmethod
-    async def create(
+    def create(
         title: str,
         slug: Optional[str] = None,
         image: Optional[str] = None,
@@ -81,16 +63,22 @@ class NewsRepository:
         h3_custom: Optional[str] = None,
     ) -> None:
         """Create a new news item."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute(
-                    "INSERT INTO news (title, slug, image, content, author, date, meta_title, meta_description, h1_custom, h2_custom, h3_custom) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-                    title, slug or None, image or None, content or None, author or "Mountain Harvest", date,
-                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None,
-                )
+        News.objects.create(
+            title=title,
+            slug=slug,
+            image=image,
+            content=content,
+            author=author or "Mountain Harvest",
+            date=date,
+            meta_title=meta_title,
+            meta_description=meta_description,
+            h1_custom=h1_custom,
+            h2_custom=h2_custom,
+            h3_custom=h3_custom,
+        )
     
     @staticmethod
-    async def update(
+    def update(
         id: int,
         title: str,
         slug: Optional[str] = None,
@@ -105,26 +93,58 @@ class NewsRepository:
         h3_custom: Optional[str] = None,
     ) -> None:
         """Update a news item."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute(
-                    "UPDATE news SET title=$1, slug=$2, date=$3, image=$4, content=$5, author=$6, meta_title=$7, meta_description=$8, h1_custom=$9, h2_custom=$10, h3_custom=$11, updated_at=NOW() WHERE id=$12",
-                    title, slug or None, date or None, image or None, content or None, author or None,
-                    meta_title or None, meta_description or None, h1_custom or None, h2_custom or None, h3_custom or None, id,
-                )
+        news = News.objects.get(id=id)
+        news.title = title
+        if slug is not None:
+            news.slug = slug
+        if date is not None:
+            news.date = date
+        if image is not None:
+            news.image = image
+        if content is not None:
+            news.content = content
+        if author is not None:
+            news.author = author
+        if meta_title is not None:
+            news.meta_title = meta_title
+        if meta_description is not None:
+            news.meta_description = meta_description
+        if h1_custom is not None:
+            news.h1_custom = h1_custom
+        if h2_custom is not None:
+            news.h2_custom = h2_custom
+        if h3_custom is not None:
+            news.h3_custom = h3_custom
+        news.save()
     
     @staticmethod
-    async def get_by_id_for_edit(id: int) -> Optional[dict]:
+    def get_by_id_for_edit(id: int) -> Optional[dict]:
         """Get news by ID for editing."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow("SELECT * FROM news WHERE id = $1", id)
-            return dict(row) if row else None
+        try:
+            news = News.objects.get(id=id)
+            return {
+                "id": news.id,
+                "title": news.title,
+                "slug": news.slug,
+                "image": news.image,
+                "content": news.content,
+                "author": news.author,
+                "date": news.date,
+                "meta_title": news.meta_title,
+                "meta_description": news.meta_description,
+                "h1_custom": news.h1_custom,
+                "h2_custom": news.h2_custom,
+                "h3_custom": news.h3_custom,
+            }
+        except News.DoesNotExist:
+            return None
     
     @staticmethod
-    async def delete(id: int) -> None:
+    def delete(id: int) -> None:
         """Delete a news item."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute("DELETE FROM news WHERE id = $1", id)
+        News.objects.filter(id=id).delete()
+    
+    @staticmethod
+    def bulk_delete(ids: List[int]) -> None:
+        """Bulk delete news items."""
+        News.objects.filter(id__in=ids).delete()

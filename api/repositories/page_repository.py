@@ -1,64 +1,89 @@
 """Page repository for data access."""
 from typing import List, Optional
-from api.db import get_conn
+from api.models.page import Page
 
 
 class PageRepository:
     """Repository for Page (static pages) data access."""
 
     @staticmethod
-    async def get_all() -> List[dict]:
+    def get_all() -> List[dict]:
         """Get all pages for admin."""
-        async with get_conn() as conn:
-            if not conn:
-                return []
-            rows = await conn.fetch("SELECT id, slug, title, meta_title, meta_description, sort_order, created_at FROM pages ORDER BY sort_order, id")
-            return [dict(r) for r in rows]
+        pages = Page.objects.all()
+        return [{
+            "id": p.id,
+            "slug": p.slug,
+            "title": p.title,
+            "meta_title": p.meta_title,
+            "meta_description": p.meta_description,
+            "sort_order": p.sort_order,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        } for p in pages]
 
     @staticmethod
-    async def get_by_slug(slug: str) -> Optional[dict]:
+    def get_by_slug(slug: str) -> Optional[dict]:
         """Get page by slug."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow("SELECT * FROM pages WHERE slug = $1", slug)
-            return dict(row) if row else None
+        try:
+            page = Page.objects.get(slug=slug)
+            return {
+                "id": page.id,
+                "slug": page.slug,
+                "title": page.title,
+                "content": page.content,
+                "meta_title": page.meta_title,
+                "meta_description": page.meta_description,
+                "sort_order": page.sort_order,
+                "created_at": page.created_at.isoformat() if page.created_at else None,
+                "updated_at": page.updated_at.isoformat() if page.updated_at else None,
+            }
+        except Page.DoesNotExist:
+            return None
 
     @staticmethod
-    async def get_by_id(id: int) -> Optional[dict]:
+    def get_by_id(id: int) -> Optional[dict]:
         """Get page by ID."""
-        async with get_conn() as conn:
-            if not conn:
-                return None
-            row = await conn.fetchrow("SELECT * FROM pages WHERE id = $1", id)
-            return dict(row) if row else None
+        try:
+            page = Page.objects.get(id=id)
+            return {
+                "id": page.id,
+                "slug": page.slug,
+                "title": page.title,
+                "content": page.content,
+                "meta_title": page.meta_title,
+                "meta_description": page.meta_description,
+                "sort_order": page.sort_order,
+                "created_at": page.created_at.isoformat() if page.created_at else None,
+                "updated_at": page.updated_at.isoformat() if page.updated_at else None,
+            }
+        except Page.DoesNotExist:
+            return None
 
     @staticmethod
-    async def create(slug: str, title: str, content: Optional[str] = None, meta_title: Optional[str] = None, meta_description: Optional[str] = None, sort_order: int = 0) -> int:
+    def create(slug: str, title: str, content: Optional[str] = None, meta_title: Optional[str] = None, meta_description: Optional[str] = None, sort_order: int = 0) -> int:
         """Create a page. Returns new id."""
-        async with get_conn() as conn:
-            if not conn:
-                return 0
-            row = await conn.fetchrow(
-                """INSERT INTO pages (slug, title, content, meta_title, meta_description, sort_order)
-                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id""",
-                slug, title, content or None, meta_title or None, meta_description or None, sort_order,
-            )
-            return row["id"] if row else 0
+        page = Page.objects.create(
+            slug=slug,
+            title=title,
+            content=content,
+            meta_title=meta_title,
+            meta_description=meta_description,
+            sort_order=sort_order,
+        )
+        return page.id
 
     @staticmethod
-    async def update(id: int, slug: str, title: str, content: Optional[str] = None, meta_title: Optional[str] = None, meta_description: Optional[str] = None, sort_order: int = 0) -> None:
+    def update(id: int, slug: str, title: str, content: Optional[str] = None, meta_title: Optional[str] = None, meta_description: Optional[str] = None, sort_order: int = 0) -> None:
         """Update a page."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute(
-                    """UPDATE pages SET slug=$1, title=$2, content=$3, meta_title=$4, meta_description=$5, sort_order=$6, updated_at=NOW() WHERE id=$7""",
-                    slug, title, content or None, meta_title or None, meta_description or None, sort_order, id,
-                )
+        page = Page.objects.get(id=id)
+        page.slug = slug
+        page.title = title
+        page.content = content
+        page.meta_title = meta_title
+        page.meta_description = meta_description
+        page.sort_order = sort_order
+        page.save()
 
     @staticmethod
-    async def delete(id: int) -> None:
+    def delete(id: int) -> None:
         """Delete a page."""
-        async with get_conn() as conn:
-            if conn:
-                await conn.execute("DELETE FROM pages WHERE id = $1", id)
+        Page.objects.filter(id=id).delete()

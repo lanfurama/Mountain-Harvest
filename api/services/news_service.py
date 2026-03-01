@@ -8,17 +8,17 @@ class NewsService:
     """Service for News business logic."""
     
     @staticmethod
-    async def get_news(page: int = 1, limit: int = 6) -> tuple[List[dict], int, int]:
+    def get_news(page: int = 1, limit: int = 6) -> tuple[List[dict], int, int]:
         """Get news with pagination."""
-        news_list, total = await NewsRepository.get_all(page=page, limit=limit)
+        news_list, total = NewsRepository.get_all(page=page, limit=limit)
         items = [n.to_dict() for n in news_list]
         total_pages = max(1, (total + limit - 1) // limit)
         return items, total, total_pages
     
     @staticmethod
-    async def get_news_by_id(id: int) -> Optional[dict]:
+    def get_news_by_id(id: int) -> Optional[dict]:
         """Get news by ID."""
-        news = await NewsRepository.get_by_id(id)
+        news = NewsRepository.get_by_id(id)
         return news.to_dict() if news else None
     
     @staticmethod
@@ -30,28 +30,31 @@ class NewsService:
         ]
     
     @staticmethod
-    async def get_news_with_mock_fallback(page: int = 1, limit: int = 6) -> tuple[List[dict], int, int]:
+    def get_news_with_mock_fallback(page: int = 1, limit: int = 6) -> tuple[List[dict], int, int]:
         """Get news with mock fallback if database unavailable."""
-        from api.db import get_conn
-        async with get_conn() as conn:
-            if not conn:
-                all_items = NewsService._mock_news()
-                total = len(all_items)
-                start = (page - 1) * limit
-                items = all_items[start : start + limit]
-                return items, total, 1
-        
-        return await NewsService.get_news(page, limit)
+        try:
+            return NewsService.get_news(page, limit)
+        except Exception:
+            all_items = NewsService._mock_news()
+            total = len(all_items)
+            start = (page - 1) * limit
+            items = all_items[start : start + limit]
+            return items, total, 1
     
     @staticmethod
-    async def get_news_by_id_with_mock_fallback(id: int) -> Optional[dict]:
+    def get_news_by_id_with_mock_fallback(id: int) -> Optional[dict]:
         """Get news by ID with mock fallback."""
-        from api.db import get_conn
-        async with get_conn() as conn:
-            if not conn:
-                for item in NewsService._mock_news():
-                    if item.get("id") == id:
-                        return item
-                return None
+        try:
+            news = NewsService.get_news_by_id(id)
+            if news:
+                return news
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error getting news id={id}: {e}")
         
-        return await NewsService.get_news_by_id(id)
+        # Fallback to mock data
+        for item in NewsService._mock_news():
+            if item.get("id") == id:
+                return item
+        return None

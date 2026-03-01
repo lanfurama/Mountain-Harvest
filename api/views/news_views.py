@@ -38,12 +38,17 @@ class NewsViews:
     @staticmethod
     def render_detail(base_html: str, news: dict, current_url: str) -> str:
         """Render HTML with news detail content."""
-        title = escape(news.get("title", "Mountain Harvest"))
-        meta_title = escape(news.get("meta_title") or title)
-        h1_custom = escape(news.get("h1_custom") or title)
-        h2_custom = escape(news.get("h2_custom") or "") if news.get("h2_custom") else ""
-        h3_custom = escape(news.get("h3_custom") or "") if news.get("h3_custom") else ""
-        image = news.get("image", "") or ""
+        # Helper function to safely get and escape values
+        def safe_get(key, default=""):
+            value = news.get(key)
+            return str(value) if value is not None else default
+        
+        title = escape(safe_get("title", "Mountain Harvest"))
+        meta_title = escape(safe_get("meta_title") or title)
+        h1_custom = escape(safe_get("h1_custom") or title)
+        h2_custom = escape(safe_get("h2_custom") or "") if safe_get("h2_custom") else ""
+        h3_custom = escape(safe_get("h3_custom") or "") if safe_get("h3_custom") else ""
+        image = safe_get("image", "")
         # Ensure image is absolute URL
         if image and not image.startswith(("http://", "https://")):
             # Extract base URL from current_url
@@ -54,9 +59,9 @@ class NewsViews:
             else:
                 image = base_url + "/" + image
         image = escape(image)
-        content = normalize_content_headers(news.get("content", "") or "")
-        author = escape(news.get("author", ""))
-        date = escape(news.get("date", ""))
+        content = normalize_content_headers(safe_get("content", ""))
+        author = escape(safe_get("author", ""))
+        date = escape(safe_get("date", ""))
         # Estimate reading time from plain text content
         text_content = re.sub(r'<[^>]+>', '', content or '')
         word_count = len(re.findall(r'\w+', text_content))
@@ -65,7 +70,7 @@ class NewsViews:
         share_url = escape(current_url)
         
         # Use meta_description if available, otherwise extract from content
-        meta_description = news.get("meta_description")
+        meta_description = safe_get("meta_description", "")
         if meta_description:
             description_escaped = escape(meta_description)
         else:
@@ -80,7 +85,7 @@ class NewsViews:
         # Update or add meta tags - use more flexible regex that matches any content value
         date_iso = _date_to_iso(date)
         date_pub_iso = date_iso + "T00:00:00+07:00" if date_iso else ""
-        updated_at = news.get("updated_at")
+        updated_at = news.get("updated_at") if news.get("updated_at") is not None else None
         updated_iso = ""
         if updated_at and hasattr(updated_at, 'strftime'):
             try:

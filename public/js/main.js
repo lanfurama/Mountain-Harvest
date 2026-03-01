@@ -238,6 +238,14 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFooterPages();
   initNewsletterForm();
   initCheckoutSection();
+  if (typeof loadNews === 'function' && !window.location.pathname.match(/^\/news\/\d+$/)) {
+    loadNews(1);
+  }
+  window.addEventListener('popstate', function() {
+    if (typeof loadNews === 'function' && !window.location.pathname.match(/^\/news\/\d+$/)) {
+      loadNews(1);
+    }
+  });
 });
 
 function initCheckoutSection() {

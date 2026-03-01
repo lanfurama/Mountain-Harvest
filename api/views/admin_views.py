@@ -16,7 +16,7 @@ class AdminViews:
     ]
     
     @staticmethod
-    def layout(req, title, content, include_editor=False):
+    def layout(req, title, content, include_editor=False, django_request=None):
         """Render admin layout."""
         path = req.url.path
         
@@ -158,7 +158,42 @@ class AdminViews:
         head_links = [Link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css")]
         if include_editor:
             head_links.append(Link(rel="stylesheet", href="https://cdn.quilljs.com/1.3.6/quill.snow.css"))
+            head_links.append(Style("""
+                /* Quill alignment styles */
+                .ql-editor .ql-align-center {
+                    text-align: center;
+                }
+                .ql-editor .ql-align-right {
+                    text-align: right;
+                }
+                .ql-editor .ql-align-justify {
+                    text-align: justify;
+                }
+                /* Center images within aligned blocks */
+                .ql-editor .ql-align-center img,
+                .ql-editor .ql-align-center .ql-image {
+                    display: block;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                .ql-editor .ql-align-right img,
+                .ql-editor .ql-align-right .ql-image {
+                    display: block;
+                    margin-left: auto;
+                    margin-right: 0;
+                }
+                /* Ensure images are block-level for proper alignment */
+                .ql-editor img {
+                    max-width: 100%;
+                    height: auto;
+                }
+                /* Image resize handles */
+                .ql-editor img {
+                    cursor: pointer;
+                }
+            """))
             scripts.append(Script(src="https://cdn.quilljs.com/1.3.6/quill.min.js"))
+            scripts.append(Script(src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"))
             scripts.append(Script("""
                 document.addEventListener('DOMContentLoaded', function() {
                     if (typeof Quill !== 'undefined') {
@@ -166,48 +201,433 @@ class AdminViews:
                         var contentInput = document.getElementById('news-content');
                         if (!editorEl) return;
                         
-                        var quill = new Quill('#news-content-editor', {
-                            theme: 'snow',
-                            modules: {
-                                toolbar: [
-                                    [{ 'header': [1, 2, 3, false] }],
-                                    ['bold', 'italic', 'underline', 'strike'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    [{ 'align': [] }],
-                                    ['link', 'image'],
-                                    ['clean']
-                                ]
-                            },
-                            placeholder: 'Nhập nội dung...'
+                        // Create image modal HTML
+                        var imageModalHtml = `
+                            <div id="quill-image-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+                                <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900">Chèn ảnh</h3>
+                                        <button id="quill-image-modal-close" class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">URL ảnh:</label>
+                                        <input type="text" id="quill-image-url" 
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F5233] focus:border-transparent"
+                                               placeholder="https://example.com/image.jpg">
+                                    </div>
+                                    <div id="quill-image-preview" class="mb-4 hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Preview:</label>
+                                        <img id="quill-image-preview-img" src="" alt="Preview" 
+                                             class="max-w-full h-auto rounded border border-gray-300">
+                                    </div>
+                                    <div class="flex justify-end gap-2">
+                                        <button id="quill-image-cancel" 
+                                                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition">
+                                            Hủy
+                                        </button>
+                                        <button id="quill-image-insert" 
+                                                class="px-4 py-2 text-white bg-[#2F5233] rounded-md hover:bg-[#1a331d] transition">
+                                            Chèn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        document.body.insertAdjacentHTML('beforeend', imageModalHtml);
+                        
+                        var imageModal = document.getElementById('quill-image-modal');
+                        var imageUrlInput = document.getElementById('quill-image-url');
+                        var imagePreview = document.getElementById('quill-image-preview');
+                        var imagePreviewImg = document.getElementById('quill-image-preview-img');
+                        var imageInsertBtn = document.getElementById('quill-image-insert');
+                        var imageCancelBtn = document.getElementById('quill-image-cancel');
+                        var imageModalClose = document.getElementById('quill-image-modal-close');
+                        
+                        function closeImageModal() {
+                            imageModal.classList.add('hidden');
+                            imageModal.classList.remove('flex');
+                            imageUrlInput.value = '';
+                            imagePreview.classList.add('hidden');
+                        }
+                        
+                        function showImageModal() {
+                            imageModal.classList.remove('hidden');
+                            imageModal.classList.add('flex');
+                            imageUrlInput.focus();
+                        }
+                        
+                        function updateImagePreview() {
+                            var url = imageUrlInput.value.trim();
+                            if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image/') || url.startsWith('/'))) {
+                                imagePreviewImg.src = url;
+                                imagePreview.classList.remove('hidden');
+                                imagePreviewImg.onerror = function() {
+                                    imagePreview.classList.add('hidden');
+                                };
+                            } else {
+                                imagePreview.classList.add('hidden');
+                            }
+                        }
+                        
+                        imageUrlInput.addEventListener('input', updateImagePreview);
+                        imageUrlInput.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                imageInsertBtn.click();
+                            }
                         });
                         
-                        if (contentInput && quill) {
-                            var initialContent = contentInput.value || editorEl.innerHTML || '';
-                            quill.root.innerHTML = initialContent;
-                            contentInput.value = initialContent;
+                        imageModalClose.addEventListener('click', closeImageModal);
+                        imageCancelBtn.addEventListener('click', closeImageModal);
+                        imageModal.addEventListener('click', function(e) {
+                            if (e.target === imageModal) {
+                                closeImageModal();
+                            }
+                        });
+                        
+                        // Function to initialize Quill with image resize if available
+                        function initQuill() {
+                            var quillConfig = {
+                                theme: 'snow',
+                                modules: {
+                                    toolbar: {
+                                        container: [
+                                            [{ 'header': [false, 1, 2, 3, false] }],
+                                            ['bold', 'italic', 'underline', 'strike'],
+                                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                            [{ 'indent': '-1'}, { 'indent': '+1' }],
+                                            [{ 'align': [] }],
+                                            ['link', 'image'],
+                                            ['clean']
+                                        ],
+                                        handlers: {
+                                            'image': function() {
+                                                showImageModal();
+                                                imageInsertBtn.onclick = function() {
+                                                    var url = imageUrlInput.value.trim();
+                                                    if (url) {
+                                                        var range = quill.getSelection(true);
+                                                        if (!range) {
+                                                            range = { index: quill.getLength(), length: 0 };
+                                                        }
+                                                        quill.insertEmbed(range.index, 'image', url, 'user');
+                                                        closeImageModal();
+                                                    }
+                                                };
+                                            }
+                                        }
+                                    }
+                                },
+                                placeholder: 'Nhập nội dung bài viết...',
+                                formats: ['header', 'bold', 'italic', 'underline', 'strike', 
+                                         'list', 'bullet', 'indent', 'align', 'link', 'image']
+                            };
                             
-                            quill.on('text-change', function() {
+                            // Try to add image resize module if available
+                            // When loaded via CDN script tag, the module auto-registers
+                            // Just check if it's available and add to config
+                            var hasImageResize = false;
+                            try {
+                                // Check various ways the module might be exposed
+                                if (typeof ImageResize !== 'undefined' || 
+                                    typeof window.ImageResize !== 'undefined' ||
+                                    typeof QuillImageResize !== 'undefined') {
+                                    hasImageResize = true;
+                                }
+                            } catch (e) {
+                                // Ignore
+                            }
+                            
+                            if (hasImageResize) {
+                                // Use lowercase 'imageResize' as module name
+                                quillConfig.modules.imageResize = {};
+                            }
+                            
+                            return new Quill('#news-content-editor', quillConfig);
+                        }
+                        
+                        // Function to setup Quill after initialization
+                        var quill;
+                        var quillInitialized = false;
+                        
+                        function setupQuill(quillInstance) {
+                            quill = quillInstance;
+                            quillInitialized = true;
+                            window.newsQuillEditor = quill;
+                            
+                            if (!contentInput) return;
+                            
+                            var initialContent = contentInput.value || '';
+                            if (initialContent) {
+                                try {
+                                    quill.root.innerHTML = initialContent;
+                                } catch (e) {
+                                    console.warn('Could not parse initial content:', e);
+                                    quill.setText(initialContent);
+                                }
+                            }
+                            contentInput.value = quill.root.innerHTML;
+                            
+                            // Fix auto-scroll issue when formatting
+                            var editorContainer = quill.container;
+                            var quillEditor = quill.root;
+                            var savedScrollTop = 0;
+                            var savedSelection = null;
+                            var isFormatting = false;
+                            var restoreTimeout = null;
+                            
+                            // Save current scroll position and selection
+                            function saveEditorState() {
+                                savedScrollTop = editorContainer.scrollTop || quillEditor.scrollTop || 0;
+                                var selection = quill.getSelection();
+                                if (selection) {
+                                    savedSelection = { index: selection.index, length: selection.length };
+                                }
+                            }
+                            
+                            // Restore scroll position using requestAnimationFrame for smooth restore
+                            function restoreScrollPosition() {
+                                if (restoreTimeout) {
+                                    cancelAnimationFrame(restoreTimeout);
+                                }
+                                
+                                function restore() {
+                                    if (editorContainer) {
+                                        editorContainer.scrollTop = savedScrollTop;
+                                    }
+                                    if (quillEditor) {
+                                        quillEditor.scrollTop = savedScrollTop;
+                                    }
+                                }
+                                
+                                // Restore immediately and also after a few frames
+                                restore();
+                                requestAnimationFrame(function() {
+                                    restore();
+                                    requestAnimationFrame(function() {
+                                        restore();
+                                    });
+                                });
+                            }
+                            
+                            // Prevent scroll on toolbar interactions
+                            var toolbar = quill.getModule('toolbar');
+                            if (toolbar && toolbar.container) {
+                                // Capture state before any toolbar interaction
+                                toolbar.container.addEventListener('mousedown', function(e) {
+                                    saveEditorState();
+                                    isFormatting = true;
+                                }, true);
+                                
+                                toolbar.container.addEventListener('click', function(e) {
+                                    saveEditorState();
+                                    isFormatting = true;
+                                }, true);
+                                
+                                toolbar.container.addEventListener('mouseup', function(e) {
+                                    saveEditorState();
+                                }, true);
+                            }
+                            
+                            // Monitor selection changes but don't save during formatting
+                            quill.on('selection-change', function(range) {
+                                if (!isFormatting && range) {
+                                    saveEditorState();
+                                }
+                            });
+                            
+                            // Restore scroll after format operations
+                            quill.on('text-change', function(delta, oldDelta, source) {
                                 contentInput.value = quill.root.innerHTML;
+                                
+                                if (isFormatting && source === 'user') {
+                                    // Use multiple restore attempts
+                                    restoreScrollPosition();
+                                    
+                                    // Also restore selection if we had one
+                                    if (savedSelection) {
+                                        setTimeout(function() {
+                                            try {
+                                                quill.setSelection(savedSelection.index, savedSelection.length, 'silent');
+                                            } catch (e) {
+                                                // Selection might be invalid, ignore
+                                            }
+                                        }, 0);
+                                    }
+                                    
+                                    // Reset formatting flag after a delay
+                                    setTimeout(function() {
+                                        isFormatting = false;
+                                    }, 100);
+                                }
+                            });
+                            
+                            // Use MutationObserver to catch DOM changes and restore scroll
+                            if (window.MutationObserver) {
+                                var observer = new MutationObserver(function(mutations) {
+                                    if (isFormatting) {
+                                        restoreScrollPosition();
+                                    }
+                                });
+                                
+                                observer.observe(quillEditor, {
+                                    childList: true,
+                                    subtree: true,
+                                    attributes: true,
+                                    attributeFilter: ['class', 'style']
+                                });
+                            }
+                            
+                            // Prevent scroll on focus (but allow user scrolling)
+                            var userScrolling = false;
+                            quillEditor.addEventListener('scroll', function() {
+                                if (!userScrolling && isFormatting) {
+                                    restoreScrollPosition();
+                                }
+                            });
+                            
+                            // Track user-initiated scrolling
+                            quillEditor.addEventListener('wheel', function() {
+                                userScrolling = true;
+                                setTimeout(function() {
+                                    userScrolling = false;
+                                }, 500);
+                            });
+                            
+                            quillEditor.addEventListener('touchmove', function() {
+                                userScrolling = true;
+                                setTimeout(function() {
+                                    userScrolling = false;
+                                }, 500);
                             });
                             
                             var form = contentInput.closest('form');
                             if (form) {
-                                form.addEventListener('submit', function() {
+                                form.addEventListener('submit', function(e) {
                                     contentInput.value = quill.root.innerHTML;
                                 });
                             }
                         }
+                        
+                        // Initialize Quill
+                        // ImageResize module from CDN loads asynchronously, so we wait a bit
+                        function tryInitQuill() {
+                            // Check if ImageResize is available (from CDN)
+                            if (typeof ImageResize !== 'undefined' || typeof window.ImageResize !== 'undefined') {
+                                setupQuill(initQuill());
+                                return true;
+                            }
+                            return false;
+                        }
+                        
+                        // Try immediately
+                        if (!tryInitQuill()) {
+                            // Wait for script to load (max 2 seconds)
+                            var checkImageResize = setInterval(function() {
+                                if (tryInitQuill()) {
+                                    clearInterval(checkImageResize);
+                                }
+                            }, 100);
+                            
+                            // Fallback: init without resize after 2 seconds
+                            setTimeout(function() {
+                                if (!quillInitialized) {
+                                    clearInterval(checkImageResize);
+                                    setupQuill(initQuill());
+                                }
+                            }, 2000);
+                        }
                     }
                 });
             """))
+        # Add inline script to define confirmDelete immediately
+        scripts.append(Script("""
+            // Define confirmDelete immediately to avoid timing issues
+            window.confirmDelete = function(id, url) {
+                if (!id || id === 'None' || !url || url.includes('None')) {
+                    console.error('Invalid delete parameters:', id, url);
+                    return;
+                }
+                
+                // Get CSRF token from cookie or meta tag
+                function getCookie(name) {
+                    var cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        var cookies = document.cookie.split(';');
+                        for (var i = 0; i < cookies.length; i++) {
+                            var cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                
+                function getCSRFToken() {
+                    var metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        return metaTag.getAttribute('content');
+                    }
+                    return getCookie('csrftoken');
+                }
+                
+                var deleteAction = {
+                    url: url,
+                    csrfToken: getCSRFToken()
+                };
+                
+                if (typeof openConfirm === 'function') {
+                    openConfirm('Bạn có chắc chắn muốn xóa mục này không?', deleteAction);
+                } else {
+                    // Fallback if admin.js not loaded yet
+                    if (confirm('Bạn có chắc chắn muốn xóa mục này không?')) {
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = url;
+                        form.style.display = 'none';
+                        
+                        if (deleteAction.csrfToken) {
+                            var csrfInput = document.createElement('input');
+                            csrfInput.type = 'hidden';
+                            csrfInput.name = 'csrfmiddlewaretoken';
+                            csrfInput.value = deleteAction.csrfToken;
+                            form.appendChild(csrfInput);
+                        }
+                        
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                }
+            };
+        """))
         scripts.append(Script(src="/js/admin.js"))
         # Add responsive meta and viewport
+        meta_charset = Meta(charset="UTF-8")
         meta_viewport = Meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        
+        # Add CSRF token meta tag if request is available
+        csrf_meta = None
+        try:
+            from django.middleware.csrf import get_token
+            # Try to get CSRF token from django_request if available
+            if django_request:
+                csrf_token = get_token(django_request)
+                if csrf_token:
+                    csrf_meta = Meta(name="csrf-token", content=csrf_token)
+        except:
+            pass
+        
+        head_elements = [meta_charset, meta_viewport, Title(f"{title} - Admin")]
+        if csrf_meta:
+            head_elements.append(csrf_meta)
+        head_elements.extend(head_links)
+        
         return Html(
             Head(
-                meta_viewport,
-                Title(f"{title} - Admin"),
-                *head_links,
+                *head_elements,
                 Style("""
                     @media (max-width: 768px) {
                         /* Touch-friendly buttons on mobile */

@@ -192,6 +192,103 @@ h4 {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+/* Quill alignment styles for frontend - apply to both .news-detail-content and .prose */
+.news-detail-content .ql-align-center,
+#news-detail-content.prose .ql-align-center,
+.prose .ql-align-center {
+  text-align: center;
+}
+
+.news-detail-content .ql-align-right,
+#news-detail-content.prose .ql-align-right,
+.prose .ql-align-right {
+  text-align: right;
+}
+
+.news-detail-content .ql-align-justify,
+#news-detail-content.prose .ql-align-justify,
+.prose .ql-align-justify {
+  text-align: justify;
+}
+
+/* Center images within aligned blocks - handle all cases with high specificity */
+.news-detail-content .ql-align-center img,
+.news-detail-content .ql-align-center > img,
+.news-detail-content p.ql-align-center img,
+.news-detail-content div.ql-align-center img,
+#news-detail-content.prose .ql-align-center img,
+#news-detail-content.prose .ql-align-center > img,
+#news-detail-content.prose p.ql-align-center img,
+#news-detail-content.prose div.ql-align-center img,
+.prose .ql-align-center img,
+.prose .ql-align-center > img,
+.prose p.ql-align-center img,
+.prose div.ql-align-center img {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.news-detail-content .ql-align-right img,
+.news-detail-content .ql-align-right > img,
+.news-detail-content p.ql-align-right img,
+.news-detail-content div.ql-align-right img,
+#news-detail-content.prose .ql-align-right img,
+#news-detail-content.prose .ql-align-right > img,
+#news-detail-content.prose p.ql-align-right img,
+#news-detail-content.prose div.ql-align-right img,
+.prose .ql-align-right img,
+.prose .ql-align-right > img,
+.prose p.ql-align-right img,
+.prose div.ql-align-right img {
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+/* Handle images that are direct children of aligned containers */
+.news-detail-content p.ql-align-center,
+.news-detail-content div.ql-align-center,
+#news-detail-content.prose p.ql-align-center,
+#news-detail-content.prose div.ql-align-center,
+.prose p.ql-align-center,
+.prose div.ql-align-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.news-detail-content p.ql-align-center img,
+.news-detail-content div.ql-align-center img,
+#news-detail-content.prose p.ql-align-center img,
+#news-detail-content.prose div.ql-align-center img,
+.prose p.ql-align-center img,
+.prose div.ql-align-center img {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.news-detail-content p.ql-align-right,
+.news-detail-content div.ql-align-right,
+#news-detail-content.prose p.ql-align-right,
+#news-detail-content.prose div.ql-align-right,
+.prose p.ql-align-right,
+.prose div.ql-align-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.news-detail-content p.ql-align-right img,
+.news-detail-content div.ql-align-right img,
+#news-detail-content.prose p.ql-align-right img,
+#news-detail-content.prose div.ql-align-right img,
+.prose p.ql-align-right img,
+.prose div.ql-align-right img {
+  display: block;
+  flex: 0 0 auto;
+}
+
 .news-detail-content h2,
 .news-detail-content h3,
 .news-detail-content h4 {
