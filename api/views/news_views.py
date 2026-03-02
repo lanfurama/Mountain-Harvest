@@ -1,5 +1,5 @@
 """News views for HTML rendering."""
-from html import escape
+from html import escape, unescape
 import re
 from datetime import datetime
 from urllib.parse import urlparse
@@ -41,7 +41,17 @@ class NewsViews:
         # Helper function to safely get and escape values
         def safe_get(key, default=""):
             value = news.get(key)
-            return str(value) if value is not None else default
+            if value is None:
+                return default
+            return str(value) if value else default
+        
+        # Helper function to get HTML content without escaping (for content field)
+        def safe_get_html(key, default=""):
+            value = news.get(key)
+            if value is None:
+                return default
+            # Return as-is if it's already a string (HTML content)
+            return str(value) if value else default
         
         title = escape(safe_get("title", "Mountain Harvest"))
         meta_title = escape(safe_get("meta_title") or title)
@@ -59,7 +69,16 @@ class NewsViews:
             else:
                 image = base_url + "/" + image
         image = escape(image)
-        content = normalize_content_headers(safe_get("content", ""))
+        # Get content as HTML (don't escape, it's already HTML from database)
+        content_raw = safe_get_html("content", "")
+        # If content appears to be escaped HTML (contains &lt; or &gt;), unescape it
+        # This handles cases where content might be double-escaped
+        if content_raw and ('&lt;' in content_raw or '&gt;' in content_raw or '&amp;' in content_raw):
+            # Check if it's actually escaped HTML (not just contains these in text)
+            if '&lt;p' in content_raw or '&lt;div' in content_raw or '&lt;h' in content_raw:
+                content_raw = unescape(content_raw)
+        # Normalize headers for SEO (H1->H2, H2->H3, H3->H4)
+        content = normalize_content_headers(content_raw)
         author = escape(safe_get("author", ""))
         date = escape(safe_get("date", ""))
         # Estimate reading time from plain text content
@@ -187,6 +206,69 @@ class NewsViews:
         schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>\n<script type="application/ld+json">\n{breadcrumb_json}\n</script>'
         base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
         
+        # Clean up empty paragraphs and excessive whitespace
+        def clean_content_html(html_content: str) -> str:
+            """Remove empty paragraphs and clean up whitespace."""
+            if not html_content:
+                return html_content
+            # Remove empty paragraphs (with optional whitespace, <br>, &nbsp;, etc.)
+            # Pattern 1: <p>...</p> with only whitespace, <br>, or &nbsp;
+            html_content = re.sub(
+                r'<p[^>]*>\s*(?:<br\s*/?>|\&nbsp;|\s|&nbsp;)*\s*</p>',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            # Pattern 2: <p class="...">...</p> with only whitespace
+            html_content = re.sub(
+                r'<p[^>]*class="[^"]*">\s*(?:<br\s*/?>|\&nbsp;|\s|&nbsp;)*\s*</p>',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            # Pattern 3: Paragraphs with only single <br> tag
+            html_content = re.sub(
+                r'<p[^>]*>\s*<br\s*/?>\s*</p>',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            # Pattern 4: Paragraphs with only &nbsp; entities
+            html_content = re.sub(
+                r'<p[^>]*>\s*(?:&nbsp;|\&#160;|\u00A0|\s)+\s*</p>',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            # Remove multiple consecutive empty paragraphs (after cleaning)
+            html_content = re.sub(
+                r'(</p>\s*){2,}(<p[^>]*>\s*</p>\s*)*',
+                '</p>',
+                html_content,
+                flags=re.IGNORECASE
+            )
+            # Clean up excessive line breaks within content (more than 2 consecutive)
+            html_content = re.sub(
+                r'(<br\s*/?>\s*){3,}',
+                '<br><br>',
+                html_content,
+                flags=re.IGNORECASE
+            )
+            # Remove leading/trailing empty paragraphs
+            html_content = re.sub(
+                r'^\s*(?:<p[^>]*>\s*</p>\s*)+',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            html_content = re.sub(
+                r'(?:<p[^>]*>\s*</p>\s*)+$',
+                '',
+                html_content,
+                flags=re.IGNORECASE | re.MULTILINE
+            )
+            return html_content
+        
         # Process content to make images full-width
         def process_content_images(html_content: str) -> str:
             """Process content HTML to make images full-width and add responsive classes."""
@@ -209,7 +291,9 @@ class NewsViews:
             )
             return html_content
         
-        processed_content = process_content_images(content)
+        # Clean content first, then process images
+        cleaned_content = clean_content_html(content)
+        processed_content = process_content_images(cleaned_content)
         
         # Render news detail content (without hidden class)
         # Add data attribute to indicate server-rendered content

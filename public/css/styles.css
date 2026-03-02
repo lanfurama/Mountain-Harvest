@@ -188,6 +188,28 @@ h4 {
   line-height: 1.8;
 }
 
+/* Hide empty paragraphs */
+.news-detail-content p:empty,
+#news-detail-content.prose p:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  min-height: 0;
+}
+
+/* Hide paragraphs that only contain <br> */
+.news-detail-content p:has(br:only-child),
+#news-detail-content.prose p:has(br:only-child) {
+  display: none;
+}
+
+/* Reduce spacing for paragraphs with minimal content (fallback for browsers without :has support) */
+.news-detail-content p:not(:has(*)):not(:has(text)),
+#news-detail-content.prose p:not(:has(*)):not(:has(text)) {
+  min-height: 0;
+}
+
 .news-detail-content p:last-child,
 #news-detail-content.prose p:last-child {
   margin-bottom: 0;
