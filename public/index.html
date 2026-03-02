@@ -19,6 +19,24 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <!-- Critical: Define handleImageError immediately for inline onerror handlers -->
+  <script>
+    (function() {
+      var FALLBACK_IMAGE_URL = 'https://placehold.co/600x400/e5e7eb/9ca3af?text=No+Image';
+      function handleImageError(img) {
+        if (!img || img.dataset && img.dataset.fallbackApplied === 'true') return;
+        if (img.dataset) img.dataset.fallbackApplied = 'true';
+        img.src = FALLBACK_IMAGE_URL;
+        img.alt = (img.alt || '') + ' (Hình ảnh tạm thời - ảnh gốc bị lỗi)';
+        if (img.classList) {
+          img.classList.add('bg-gray-100', 'object-contain');
+        } else {
+          img.className += ' bg-gray-100 object-contain';
+        }
+      }
+      window.handleImageError = handleImageError;
+    })();
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -101,29 +119,34 @@
         </div>
 
         <!-- SEARCH BOX (Central Feature) -->
-        <form method="GET" action="/" class="hidden md:flex flex-1 max-w-2xl mx-4 relative group">
-          <div class="relative w-full">
+        <form method="GET" action="/" class="hidden md:flex flex-1 max-w-2xl mx-4 gap-2 items-center">
+          <!-- Category Dropdown (Separate) -->
+          <div class="relative flex-shrink-0">
+            <select name="category" id="header-category"
+              class="appearance-none bg-white border border-gray-300 rounded-lg px-4 pr-10 py-2.5 text-gray-700 text-sm font-medium cursor-pointer hover:border-brand-green hover:text-brand-green focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition shadow-sm min-w-[160px]">
+              <option value="" data-i18n="search.all">Tất cả danh mục</option>
+              <option value="Rau củ quả" data-i18n="search.agricultural">Rau củ quả</option>
+              <option value="Hạt & Ngũ cốc">Hạt & Ngũ cốc</option>
+              <option value="Gia dụng">Gia dụng</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+              <i class="fas fa-chevron-down text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative flex-1 group">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-search text-gray-400 group-focus-within:text-brand-green transition"></i>
             </div>
             <input type="text" name="search" id="header-search"
-              class="block w-full pl-10 pr-32 py-2.5 border border-gray-300 rounded-full leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm transition shadow-sm"
-              placeholder="Search products..." data-i18n-placeholder="search.placeholder">
-
-            <!-- Quick Category Select inside Search -->
-            <div class="absolute inset-y-0 right-0 flex items-center">
-              <select name="category"
-                class="h-full py-0 pl-2 pr-8 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-r-md focus:ring-0 cursor-pointer hover:text-brand-green font-medium">
-                <option value="" data-i18n="search.all">All</option>
-                <option value="Rau củ quả" data-i18n="search.agricultural">Agricultural Products</option>
-                <option value="Hạt & Ngũ cốc">Hạt & Ngũ cốc</option>
-                <option value="Gia dụng">Gia dụng</option>
-              </select>
-              <button type="submit"
-                class="absolute right-1 top-1 bottom-1 bg-brand-green hover:bg-brand-darkGreen text-white px-4 rounded-full transition text-sm font-bold" data-i18n="search.button">
-                Search
-              </button>
-            </div>
+              class="block w-full pl-10 pr-24 py-2.5 border border-gray-300 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm transition shadow-sm"
+              placeholder="Tìm kiếm sản phẩm..." data-i18n-placeholder="search.placeholder">
+            <button type="submit"
+              class="absolute right-1 top-1 bottom-1 bg-brand-green hover:bg-brand-darkGreen text-white px-5 rounded-md transition text-sm font-semibold flex items-center gap-1.5">
+              <i class="fas fa-search text-xs"></i>
+              <span data-i18n="search.button">Tìm</span>
+            </button>
           </div>
         </form>
 
@@ -165,23 +188,44 @@
       </div>
 
       <!-- Category Bar (Desktop) -->
-      <div id="nav-categories" class="hidden md:flex justify-center space-x-8 py-2 border-t border-gray-100 text-sm font-medium">
-        <a href="#shop" class="hover:text-brand-green transition flex items-center"><i class="fas fa-carrot mr-1"></i><span>Rau củ quả</span></a>
-        <a href="#shop" class="hover:text-brand-green transition flex items-center"><i class="fas fa-wheat-awn mr-1"></i><span>Hạt & Ngũ cốc</span></a>
-        <a href="#shop" class="hover:text-brand-green transition flex items-center"><i class="fas fa-coffee mr-1"></i><span>Gia dụng</span></a>
+      <div id="nav-categories" class="hidden md:flex justify-center items-center space-x-6 py-2 border-t border-gray-100 text-sm font-medium">
+        <!-- Categories will be populated by JavaScript -->
+        <div class="w-px h-4 bg-gray-300"></div>
+        <a href="/#news-section" class="hover:text-brand-green transition flex items-center group" data-i18n="nav.news">
+          <i class="fas fa-newspaper mr-1.5 group-hover:scale-110 transition-transform"></i>
+          <span>Tin tức</span>
+        </a>
       </div>
     </div>
 
     <!-- Mobile Menu Panel -->
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-t p-4">
-      <input type="text" class="w-full border p-2 rounded mb-4" placeholder="Search..." data-i18n-placeholder="search.placeholder">
-      <div class="space-y-2">
-        <a href="#" class="block font-bold text-brand-green" data-i18n="search.agricultural">Agricultural Products</a>
-        <div class="pl-4 space-y-1 text-sm text-gray-600">
-          <a href="#" class="block" data-i18n="nav.fresh">Fresh</a>
-          <a href="#" class="block" data-i18n="nav.dry">Dry Food</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t shadow-xl">
+      <div class="p-5">
+        <!-- Mobile Search -->
+        <form method="GET" action="/" class="mb-5">
+          <div class="flex gap-2">
+            <input type="text" name="search" class="flex-1 border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 transition" placeholder="Tìm kiếm sản phẩm..." data-i18n-placeholder="search.placeholder">
+            <button type="submit" class="bg-brand-green hover:bg-brand-darkGreen text-white px-5 rounded-xl text-sm font-semibold transition shadow-md hover:shadow-lg">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </form>
+        
+        <!-- Mobile Categories & Links -->
+        <div id="mobile-menu-content" class="space-y-0.5">
+          <!-- Categories will be populated by JavaScript -->
         </div>
-        <a href="#" class="block font-bold text-brand-brown mt-2" data-i18n="search.essentials">Essentials</a>
+        
+        <!-- News Link (Always visible) -->
+        <div id="mobile-menu-news" class="border-t-2 border-gray-100 pt-4 mt-4">
+          <a href="/#news-section" class="flex items-center gap-3 py-3 px-3 text-gray-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-semibold group">
+            <div class="w-10 h-10 rounded-lg bg-brand-green/10 flex items-center justify-center group-hover:bg-brand-green transition">
+              <i class="fas fa-newspaper text-brand-green group-hover:text-white transition"></i>
+            </div>
+            <span>Tin tức</span>
+            <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-brand-green transition"></i>
+          </a>
+        </div>
       </div>
     </div>
   </nav>
@@ -345,7 +389,7 @@
     </section>
 
     <!-- News Section -->
-    <section id="news-section" class="mb-16" aria-labelledby="news-section-title">
+    <section id="news-section" class="mb-16 scroll-mt-24" aria-labelledby="news-section-title">
       <div class="flex justify-between items-end mb-8">
         <div>
           <h2 id="news-section-title" class="text-3xl font-bold text-gray-800" data-i18n="news.sectionTitle">Tin tức / News</h2>
@@ -500,12 +544,19 @@
       </div>
 
       <div class="border-t border-green-800 pt-8 text-center text-sm text-green-200">
-        <p>© 2024 Mountain Harvest. Designed for E-commerce.</p>
+        <p>© 2026 Mountain Harvest. Designed for E-commerce.</p>
       </div>
     </div>
   </footer>
 
-  <!-- JavaScript Files (main.js first - defines handleImageError for img onerror) -->
+  <!-- JavaScript Files (load order matters) -->
+  <!-- Image handler MUST be first - images may error before other scripts load -->
+  <script src="/js/image-handler.js"></script>
+  <!-- Core utilities and configuration -->
+  <script src="/js/config.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <!-- Application modules -->
   <script src="/js/main.js"></script>
   <script src="/js/i18n.js"></script>
   <script src="/js/cart.js"></script>

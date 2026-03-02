@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/products/<int:id>', api_views.api_product_detail, name='api_product_detail'),
     path('api/news', api_views.api_news, name='api_news'),
     path('api/news/<int:id>', api_views.api_news_detail, name='api_news_detail'),
+    path('api/news/<int:id>/related', api_views.api_news_related, name='api_news_related'),
     path('api/site', api_views.api_site, name='api_site'),
     path('api/pages', api_views.api_pages, name='api_pages'),
     path('api/newsletter/subscribe', api_views.api_newsletter_subscribe, name='api_newsletter_subscribe'),

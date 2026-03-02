@@ -828,11 +828,9 @@ def _build_news_form(news_data=None, request=None):
                         type="text",
                         name="author",
                         value=author_value,
-                        readonly=True,
-                        cls="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50 text-gray-600 cursor-not-allowed",
+                        cls="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#2F5233] focus:border-[#2F5233]",
                         placeholder="Tác giả"
                     ),
-                    Span("Tự động điền", cls="text-xs text-gray-500 mt-1 block"),
                 ),
                 Div(
                     Label("Ngày đăng", cls="block text-xs font-medium text-gray-700 mb-1"),
@@ -841,12 +839,10 @@ def _build_news_form(news_data=None, request=None):
                             type="date",
                             name="date",
                             value=date_value,
-                            readonly=True,
-                            cls="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-gray-50 text-gray-600 cursor-not-allowed"
+                            cls="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#2F5233] focus:border-[#2F5233]"
                         ),
                         I(cls="fas fa-calendar absolute right-2 top-2 text-gray-400 text-xs pointer-events-none"),
                     ),
-                    Span("Tự động điền", cls="text-xs text-gray-500 mt-1 block"),
                 ),
             ),
         ),

@@ -134,3 +134,91 @@ function renderNews() {
     `;
   }).join('');
 }
+
+// Related Articles
+async function loadRelatedNews(newsId) {
+  const container = document.getElementById('news-related-list');
+  if (!container) return;
+  
+  // Show loading skeleton
+  container.innerHTML = Array(3).fill(0).map(() => `
+    <article class="bg-white rounded-xl overflow-hidden shadow-sm">
+      <div class="skeleton skeleton-image" style="height: 12rem;"></div>
+      <div class="p-6">
+        <div class="skeleton skeleton-text" style="width: 60%; margin-top: 1rem;"></div>
+        <div class="skeleton skeleton-text" style="margin-top: 0.5rem;"></div>
+        <div class="skeleton skeleton-text skeleton-text-sm" style="margin-top: 0.5rem;"></div>
+      </div>
+    </article>
+  `).join('');
+  
+  try {
+    const res = await fetch(`/api/news/${newsId}/related?limit=3`);
+    const data = res.ok ? await res.json() : {};
+    const items = Array.isArray(data.items) ? data.items : [];
+    
+    if (items.length === 0) {
+      const section = document.getElementById('news-related-section');
+      if (section) section.style.display = 'none';
+      return;
+    }
+    
+    container.innerHTML = items.map(news => {
+      const titleEscaped = (news.title || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      let contentPreview = '';
+      if (news.content) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = news.content;
+        contentPreview = tempDiv.textContent || tempDiv.innerText || '';
+        contentPreview = contentPreview.replace(/&nbsp;/g, ' ').trim().replace(/\s+/g, ' ').substring(0, 120);
+        if (contentPreview.length >= 120) contentPreview += '...';
+        contentPreview = contentPreview.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+      return `
+        <article class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300" itemscope itemtype="https://schema.org/Article">
+          <a href="/news/${news.id}" class="block">
+            <div class="h-48 overflow-hidden">
+              <img src="${news.image || ''}" alt="${titleEscaped}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)" itemprop="image">
+            </div>
+            <div class="p-6">
+              <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
+              <h3 class="font-bold text-lg mb-2 hover:text-brand-green transition-colors" itemprop="headline">${titleEscaped}</h3>
+              <p class="text-gray-600 text-sm line-clamp-2" itemprop="description">${contentPreview}</p>
+            </div>
+          </a>
+        </article>
+      `;
+    }).join('');
+  } catch (e) {
+    console.warn('Related news API failed', e);
+    const section = document.getElementById('news-related-section');
+    if (section) section.style.display = 'none';
+  }
+}
+
+// Auto-load related articles on news detail page
+function initRelatedNews() {
+  const newsDetail = document.getElementById('news-detail');
+  if (!newsDetail) return;
+  
+  // Check if news detail is visible (not hidden)
+  const isVisible = newsDetail.offsetParent !== null || !newsDetail.classList.contains('hidden');
+  if (!isVisible) return;
+  
+  const pathMatch = window.location.pathname.match(/\/news\/(\d+)/);
+  if (pathMatch) {
+    const newsId = parseInt(pathMatch[1], 10);
+    if (newsId) {
+      loadRelatedNews(newsId);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initRelatedNews);
+
+// Also check when page becomes visible (for SPA navigation)
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', initRelatedNews);
+  // Check periodically for server-rendered content
+  setTimeout(initRelatedNews, 500);
+}

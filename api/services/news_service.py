@@ -58,3 +58,12 @@ class NewsService:
             if item.get("id") == id:
                 return item
         return None
+    
+    @staticmethod
+    def get_related_news(id: int, limit: int = 3) -> List[dict]:
+        """Get related news articles."""
+        try:
+            related_list = NewsRepository.get_related(id=id, limit=limit)
+            return [n.to_dict() for n in related_list]
+        except Exception:
+            return []

@@ -200,10 +200,45 @@ class NewsViews:
                 {"@type": "ListItem", "position": 3, "name": h1_custom}
             ]
         }
+        # Add Related Articles ItemList schema for SEO
+        from api.services.news_service import NewsService
+        news_id = news.get("id")
+        related_news = []
+        related_list_schema = None
+        if news_id:
+            try:
+                related_news = NewsService.get_related_news(id=news_id, limit=3)
+            except Exception:
+                pass
+        if related_news:
+            related_list_schema = {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "name": "Bài viết liên quan",
+                "description": "Các bài viết tin tức liên quan khác",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": idx + 1,
+                        "item": {
+                            "@type": "Article",
+                            "headline": r.get("title", ""),
+                            "url": f"{current_url.split('/news')[0]}/news/{r.get('id')}",
+                            "image": r.get("image", ""),
+                            "datePublished": _date_to_iso(r.get("date", ""))
+                        }
+                    }
+                    for idx, r in enumerate(related_news)
+                ]
+            }
+        
         import json
         schema_json = json.dumps(article_schema, ensure_ascii=False, indent=2)
         breadcrumb_json = json.dumps(breadcrumb_schema, ensure_ascii=False, indent=2)
         schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>\n<script type="application/ld+json">\n{breadcrumb_json}\n</script>'
+        if related_list_schema:
+            related_json = json.dumps(related_list_schema, ensure_ascii=False, indent=2)
+            schema_script += f'\n<script type="application/ld+json">\n{related_json}\n</script>'
         base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
         
         # Clean up empty paragraphs and excessive whitespace
@@ -357,6 +392,17 @@ class NewsViews:
           </a>
         </div>
       </div>
+      
+      <!-- Related Articles Section -->
+      <section id="news-related-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 bg-white">
+        <div class="mb-8 md:mb-12">
+          <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Bài viết liên quan</h2>
+          <p class="text-gray-600">Khám phá thêm những tin tức và câu chuyện thú vị khác</p>
+        </div>
+        <div id="news-related-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Related articles will be loaded here -->
+        </div>
+      </section>
     </article>'''
         
         # Skip products.js on news detail page to reduce payload

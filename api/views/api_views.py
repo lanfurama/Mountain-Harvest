@@ -86,6 +86,18 @@ def api_news_detail(request, id):
     return JsonResponse(news)
 
 
+def api_news_related(request, id):
+    """Get related news articles API."""
+    try:
+        limit = int(request.GET.get('limit', 3))
+    except ValueError:
+        limit = 3
+    limit = max(1, min(10, limit))
+    
+    items = NewsService.get_related_news(id=id, limit=limit)
+    return JsonResponse({"items": items})
+
+
 def api_site(request):
     """Get site configuration API."""
     def _cfg(config, k):

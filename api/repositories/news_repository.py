@@ -148,3 +148,13 @@ class NewsRepository:
     def bulk_delete(ids: List[int]) -> None:
         """Bulk delete news items."""
         News.objects.filter(id__in=ids).delete()
+    
+    @staticmethod
+    def get_related(id: int, limit: int = 3) -> List[News]:
+        """Get related news articles (exclude current, get latest)."""
+        try:
+            # Get latest news excluding current article
+            related = list(News.objects.exclude(id=id).order_by('-id', 'sort_order')[:limit])
+            return related
+        except Exception:
+            return []
