@@ -187,64 +187,89 @@ class NewsViews:
         schema_script = f'<script type="application/ld+json">\n{schema_json}\n</script>\n<script type="application/ld+json">\n{breadcrumb_json}\n</script>'
         base_html = base_html.replace('</head>', schema_script + '\n</head>', 1)
         
+        # Process content to make images full-width
+        def process_content_images(html_content: str) -> str:
+            """Process content HTML to make images full-width and add responsive classes."""
+            if not html_content:
+                return html_content
+            # Add news-content-img class to all images
+            # Handle images with existing class attribute
+            html_content = re.sub(
+                r'<img([^>]*?)\s+class=["\']([^"\']*?)["\']([^>]*?)>',
+                lambda m: f'<img{m.group(1)} class="{m.group(2)} news-content-img"{m.group(3)}>',
+                html_content,
+                flags=re.IGNORECASE
+            )
+            # Handle images without class attribute
+            html_content = re.sub(
+                r'<img((?:(?!\s+class=)[^>])*)>',
+                r'<img class="news-content-img"\1>',
+                html_content,
+                flags=re.IGNORECASE
+            )
+            return html_content
+        
+        processed_content = process_content_images(content)
+        
         # Render news detail content (without hidden class)
         # Add data attribute to indicate server-rendered content
-        news_detail_html = f'''<article id="news-detail" class="w-full bg-brand-cream/40" data-server-rendered="true" itemscope itemtype="https://schema.org/Article">
-      <header class="relative w-full h-[45vh] min-h-[280px] bg-gray-900 overflow-hidden">
-        <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" loading="eager" class="absolute inset-0 w-full h-full object-cover" onerror="handleImageError(this)" itemprop="image">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-        <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-8 md:pb-12">
-          <nav class="text-xs md:text-sm text-gray-200 mb-3" aria-label="Breadcrumb">
+        news_detail_html = f'''<article id="news-detail" class="w-full bg-gradient-to-b from-brand-cream/40 to-white" data-server-rendered="true" itemscope itemtype="https://schema.org/Article">
+      <header class="relative w-full h-[50vh] min-h-[320px] md:h-[60vh] md:min-h-[400px] bg-gray-900 overflow-hidden">
+        <img id="news-detail-image" src="{image}" alt="{title}" width="1200" height="630" fetchpriority="high" loading="eager" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105" onerror="handleImageError(this)" itemprop="image">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+        <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-end pb-6 md:pb-10 lg:pb-12">
+          <nav class="text-xs md:text-sm text-gray-200/90 mb-4" aria-label="Breadcrumb">
             <ol class="flex flex-wrap items-center gap-1 md:gap-2">
-              <li><a href="/" class="hover:text-brand-light">Trang chủ</a><span class="mx-1">/</span></li>
-              <li><a href="/#news-list" class="hover:text-brand-light">Tin tức</a><span class="mx-1">/</span></li>
-              <li class="font-semibold text-white line-clamp-1">{h1_custom}</li>
+              <li><a href="/" class="hover:text-white transition-colors">Trang chủ</a><span class="mx-1.5">/</span></li>
+              <li><a href="/#news-list" class="hover:text-white transition-colors">Tin tức</a><span class="mx-1.5">/</span></li>
+              <li class="font-semibold text-white line-clamp-2">{h1_custom}</li>
             </ol>
           </nav>
-          <div class="flex flex-wrap items-center gap-3 text-xs md:text-sm text-gray-200/90 mb-2">
-            {f'<time id="news-detail-date" class="inline-flex items-center gap-1" datetime="{_date_to_iso(date)}"><i class="far fa-calendar-alt"></i> {date}</time>' if date else '<time id="news-detail-date" class="inline-flex items-center gap-1" datetime=""></time>'}
-            {f'<span id="news-detail-author" class="inline-flex items-center gap-1"><i class="far fa-user"></i> Tác giả: {author}</span>' if author else '<span id="news-detail-author" class="inline-flex items-center gap-1"></span>'}
+          <div class="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-sm text-gray-200 mb-4">
+            {f'<time id="news-detail-date" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm" datetime="{_date_to_iso(date)}"><i class="far fa-calendar-alt"></i> <span>{date}</span></time>' if date else '<time id="news-detail-date" class="inline-flex items-center gap-1" datetime=""></time>'}
+            {f'<span id="news-detail-author" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"><i class="far fa-user"></i> <span>{author}</span></span>' if author else '<span id="news-detail-author" class="inline-flex items-center gap-1"></span>'}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"><i class="far fa-clock"></i> <span>{reading_time_label}</span></span>
           </div>
-          <h1 id="news-detail-title" class="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3" itemprop="headline">{h1_custom}</h1>
+          <h1 id="news-detail-title" class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-0 drop-shadow-lg" itemprop="headline">{h1_custom}</h1>
         </div>
       </header>
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <a href="/" class="inline-flex items-center gap-2 text-brand-green font-semibold hover:underline">
-            <i class="fas fa-arrow-left"></i> Quay lại tin tức
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 md:mb-10">
+          <a href="/#news-list" class="inline-flex items-center gap-2 text-brand-green font-semibold hover:text-brand-darkGreen transition-colors group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> <span>Quay lại tin tức</span>
           </a>
-          <div class="flex items-center gap-3 text-sm text-gray-500">
-            <span class="uppercase tracking-wide text-xs font-semibold text-brand-green/80">Chia sẻ</span>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Chia sẻ</span>
             <div class="flex items-center gap-2">
-              <a href="https://www.facebook.com/sharer/sharer.php?u={share_url}" target="_blank" rel="noopener" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition" aria-label="Chia sẻ Facebook">
+              <a href="https://www.facebook.com/sharer/sharer.php?u={share_url}" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all shadow-md" aria-label="Chia sẻ Facebook">
                 <i class="fab fa-facebook-f text-sm"></i>
               </a>
-              <a href="https://twitter.com/intent/tweet?url={share_url}&text={title}" target="_blank" rel="noopener" class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center hover:bg-sky-600 transition" aria-label="Chia sẻ Twitter">
+              <a href="https://twitter.com/intent/tweet?url={share_url}&text={title}" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-full bg-sky-500 text-white flex items-center justify-center hover:bg-sky-600 hover:scale-110 transition-all shadow-md" aria-label="Chia sẻ Twitter">
                 <i class="fab fa-x-twitter text-sm"></i>
               </a>
-              <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href)" class="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center hover:bg-gray-200 transition" aria-label="Sao chép link">
+              <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href).then(() => alert('Đã sao chép link!'))" class="w-9 h-9 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center hover:bg-gray-200 hover:scale-110 transition-all shadow-md" aria-label="Sao chép link">
                 <i class="fas fa-link text-sm"></i>
               </button>
             </div>
           </div>
         </div>
-        {f'<h2 id="news-detail-h2" class="text-2xl font-semibold text-gray-900 mb-4">{h2_custom}</h2>' if h2_custom else ''}
-        {f'<h3 id="news-detail-h3" class="text-xl font-semibold text-gray-800 mb-3">{h3_custom}</h3>' if h3_custom else ''}
-        <div id="news-detail-content" class="prose prose-lg max-w-none text-gray-700 leading-relaxed" itemprop="articleBody">{content}</div>
-        <div class="mt-10 pt-6 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand-green text-white flex items-center justify-center">
-              <span class="font-semibold text-sm">{(author or "Mountain Harvest").strip()[:1]}</span>
+        {f'<h2 id="news-detail-h2" class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 mt-8 leading-tight">{h2_custom}</h2>' if h2_custom else ''}
+        {f'<h3 id="news-detail-h3" class="text-xl md:text-2xl font-semibold text-gray-800 mb-4 mt-6 leading-tight">{h3_custom}</h3>' if h3_custom else ''}
+        <div id="news-detail-content" class="news-detail-content prose prose-lg prose-headings:font-bold prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:md:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:md:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-base prose-p:md:text-lg prose-p:mb-5 prose-a:text-brand-green prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-bold max-w-none" itemprop="articleBody">{processed_content}</div>
+        <div class="mt-12 md:mt-16 pt-8 border-t-2 border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-brand-green to-brand-darkGreen text-white flex items-center justify-center shadow-lg">
+              <span class="font-bold text-base md:text-lg">{(author or "Mountain Harvest").strip()[:1].upper()}</span>
             </div>
             <div>
-              <div class="text-sm font-semibold text-gray-900">
+              <div class="text-base md:text-lg font-bold text-gray-900">
                 {author or "Mountain Harvest"}
               </div>
-              <p class="text-xs text-gray-500">Tin tức &amp; chia sẻ từ Mountain Harvest.</p>
+              <p class="text-xs md:text-sm text-gray-500 mt-1">Tin tức &amp; chia sẻ từ Mountain Harvest</p>
             </div>
           </div>
-          <a href="/#news-list" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-green hover:underline">
-            Xem thêm bài viết khác <i class="fas fa-arrow-right text-xs"></i>
+          <a href="/#news-list" class="inline-flex items-center gap-2 text-sm md:text-base font-semibold text-brand-green hover:text-brand-darkGreen transition-colors group">
+            <span>Xem thêm bài viết khác</span> <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
           </a>
         </div>
       </div>
