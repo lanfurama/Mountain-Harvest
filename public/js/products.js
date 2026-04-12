@@ -93,13 +93,13 @@ function renderProductPagination() {
   const prevDisabled = productsPage <= 1 || productsLoading ? ' opacity-50 pointer-events-none' : '';
   const nextDisabled = productsPage >= productsTotalPages || productsLoading ? ' opacity-50 pointer-events-none' : '';
   
-  let html = '<a href="#" data-page="prev" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 transition' + prevDisabled + '"><i class="fas fa-chevron-left"></i></a>';
+  let html = '<a href="#" data-page="prev" class="inline-flex items-center justify-center w-9 h-9 border border-warm-300 rounded-lg hover:bg-warm-200 text-warm-700 transition' + prevDisabled + '"><i class="fas fa-chevron-left"></i></a>';
   for (let p = 1; p <= productsTotalPages; p++) {
-    const active = p === productsPage ? ' bg-brand-green text-white border-brand-green' : ' border-gray-300 hover:bg-gray-100 text-gray-700';
+    const active = p === productsPage ? ' bg-brand-green text-white border-brand-green' : ' border-warm-300 hover:bg-warm-200 text-warm-700';
     const disabled = productsLoading && p !== productsPage ? ' opacity-50 pointer-events-none' : '';
     html += '<a href="#" data-page="' + p + '" class="inline-flex items-center justify-center w-9 h-9 border rounded-lg transition' + active + disabled + '">' + p + '</a>';
   }
-  html += '<a href="#" data-page="next" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 transition' + nextDisabled + '"><i class="fas fa-chevron-right"></i></a>';
+  html += '<a href="#" data-page="next" class="inline-flex items-center justify-center w-9 h-9 border border-warm-300 rounded-lg hover:bg-warm-200 text-warm-700 transition' + nextDisabled + '"><i class="fas fa-chevron-right"></i></a>';
   el.innerHTML = html;
   el.querySelectorAll('a[data-page]').forEach(function (a) {
     a.addEventListener('click', function (e) {
@@ -128,7 +128,7 @@ function renderActiveFilters() {
   }
   container.classList.remove('hidden');
   tagsEl.innerHTML = tags.map(function (t) {
-    return '<span class="bg-green-100 text-brand-green px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-green-200" data-clear="' + t.key + '">' + t.label + ' <i class="fas fa-times text-xs"></i></span>';
+    return '<span class="bg-brand-green/10 text-brand-green px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer hover:bg-brand-green/20 transition" data-clear="' + t.key + '">' + t.label + ' <i class="fas fa-times text-xs"></i></span>';
   }).join('');
   tagsEl.querySelectorAll('[data-clear]').forEach(function (span) {
     span.addEventListener('click', function () {
@@ -158,43 +158,45 @@ function renderProducts() {
   const tags = (p) => Array.isArray(p.tags) ? p.tags : [];
 
   container.innerHTML = list.map(product => `
-    <div class="bg-white rounded-xl shadow-sm hover:shadow-xl transition duration-300 group overflow-hidden border border-gray-100">
-        <div class="relative h-64 overflow-hidden">
-            ${product.discount ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">${product.discount}</span>` : ''}
-            ${tags(product).map(tag => {
-    let colorClass = 'bg-blue-100 text-blue-600';
-    if (tag === 'Best Seller') colorClass = 'bg-brand-orange text-white';
-    if (tag === 'Organic') colorClass = 'bg-green-100 text-brand-green';
-    return `<span class="absolute top-3 right-3 ${colorClass} text-xs font-bold px-2 py-1 rounded z-10 mr-1">${tag}</span>`;
+    <div class="bg-warm-50 rounded-xl shadow-ring hover:shadow-lift transition duration-300 group overflow-hidden border border-warm-200">
+        <div class="relative h-64 overflow-hidden bg-white">
+            ${product.discount ? `<span class="absolute top-3 left-3 bg-brand-terracotta text-white text-xs font-semibold px-2.5 py-1 rounded-full z-10">${product.discount}</span>` : ''}
+            <div class="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+              ${tags(product).map(tag => {
+    let colorClass = 'bg-warm-300/80 text-warm-800';
+    if (tag === 'Best Seller') colorClass = 'bg-brand-terracotta/90 text-white';
+    if (tag === 'Organic') colorClass = 'bg-brand-green/90 text-white';
+    return `<span class="${colorClass} text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">${tag}</span>`;
   }).join('')}
-            
-            <img src="${product.image}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500" onerror="handleImageError(this)">
-            
-            <div class="absolute bottom-0 left-0 right-0 bg-white/90 p-2 translate-y-full group-hover:translate-y-0 transition duration-300 flex justify-center gap-2 backdrop-blur-sm">
-                <button class="p-2 rounded-full bg-gray-100 hover:bg-brand-green hover:text-white transition" title="Xem nhanh" onclick="openProductModal(${product.id})">
+            </div>
+
+            <img src="${product.image}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" onerror="handleImageError(this)">
+
+            <div class="absolute bottom-0 left-0 right-0 bg-warm-50/90 p-2 translate-y-full group-hover:translate-y-0 transition duration-300 flex justify-center gap-2 backdrop-blur-sm border-t border-warm-200">
+                <button class="p-2 rounded-lg bg-warm-200 hover:bg-brand-green hover:text-white transition text-warm-700" title="Xem nhanh" onclick="openProductModal(${product.id})">
                     <i class="fas fa-eye"></i>
                 </button>
             </div>
         </div>
         <div class="p-4">
-            <div class="text-xs text-gray-500 mb-1">${product.category}</div>
-            <h3 class="font-bold text-lg text-gray-800 hover:text-brand-green cursor-pointer truncate" onclick="openProductModal(${product.id})">${product.name}</h3>
+            <div class="text-xs text-warm-600 mb-1 font-medium uppercase tracking-wide">${product.category}</div>
+            <h3 class="font-semibold text-base text-warm-900 hover:text-brand-green cursor-pointer truncate leading-snug" onclick="openProductModal(${product.id})">${product.name}</h3>
             <div class="flex items-center my-2">
-                <div class="flex text-yellow-400 text-xs">
+                <div class="flex text-amber-400 text-xs gap-0.5">
                     ${Array(5).fill(0).map((_, i) =>
     i < Math.floor(product.rating) ? '<i class="fas fa-star"></i>' :
-      (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star"></i>')
+      (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star text-warm-300"></i>')
   ).join('')}
                 </div>
-                <span class="text-xs text-gray-400 ml-2">(${product.reviews} đánh giá)</span>
+                <span class="text-xs text-warm-500 ml-2">(${product.reviews})</span>
             </div>
-            <div class="flex justify-between items-center mt-3">
+            <div class="flex justify-between items-center mt-3 pt-3 border-t border-warm-200">
                 <div>
-                    <span class="text-lg font-bold text-brand-green">${formatCurrency(product.price)}</span>
-                    ${product.originalPrice ? `<span class="text-sm text-gray-400 line-through ml-2">${formatCurrency(product.originalPrice)}</span>` : ''}
-                    ${product.unit ? `<span class="text-xs text-gray-500">${product.unit}</span>` : ''}
+                    <span class="text-lg font-bold text-brand-terracotta">${formatCurrency(product.price)}</span>
+                    ${product.originalPrice ? `<span class="text-sm text-warm-500 line-through ml-1">${formatCurrency(product.originalPrice)}</span>` : ''}
+                    ${product.unit ? `<span class="text-xs text-warm-500 ml-1">${product.unit}</span>` : ''}
                 </div>
-                <button onclick="addToCart(${product.id})" class="bg-brand-green text-white p-2 rounded-lg hover:bg-brand-darkGreen transition shadow-lg shadow-green-200">
+                <button onclick="addToCart(${product.id})" class="bg-brand-green text-white p-2 rounded-lg hover:bg-brand-darkGreen transition">
                     <i class="fas fa-cart-plus"></i>
                 </button>
             </div>
@@ -212,39 +214,39 @@ function openProductModal(id) {
 
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="h-64 md:h-full rounded-lg overflow-hidden">
+        <div class="h-64 md:h-full rounded-xl overflow-hidden bg-white">
             <img src="${product.image}" class="w-full h-full object-cover" onerror="handleImageError(this)">
         </div>
         <div>
-            <span class="text-sm text-brand-green font-bold bg-green-100 px-2 py-1 rounded-full">${product.category}</span>
-            <h2 class="text-2xl font-bold text-gray-800 mt-2 mb-2 font-serif">${product.name}</h2>
+            <span class="text-xs text-brand-green font-semibold bg-brand-green/10 px-3 py-1.5 rounded-full uppercase tracking-wide">${product.category}</span>
+            <h2 class="text-2xl font-medium text-warm-950 mt-3 mb-2" style="font-family:'Playfair Display',Georgia,serif;">${product.name}</h2>
             <div class="flex items-center mb-4">
-                <div class="flex text-yellow-400 text-sm">
+                <div class="flex text-amber-400 text-sm gap-0.5">
                     ${Array(5).fill(0).map((_, i) =>
     i < Math.floor(product.rating) ? '<i class="fas fa-star"></i>' :
-      (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star"></i>')
+      (i < product.rating ? '<i class="fas fa-star-half-alt"></i>' : '<i class="far fa-star text-warm-300"></i>')
   ).join('')}
                 </div>
-                <span class="text-sm text-gray-500 ml-2">(${product.reviews} đánh giá)</span>
+                <span class="text-sm text-warm-600 ml-2">(${product.reviews} đánh giá)</span>
             </div>
-            
-            <div class="text-3xl font-bold text-brand-green mb-4">
+
+            <div class="text-3xl font-bold text-brand-terracotta mb-4">
                 ${formatCurrency(product.price)}
-                ${product.unit ? `<span class="text-base font-normal text-gray-500">${product.unit}</span>` : ''}
+                ${product.unit ? `<span class="text-base font-normal text-warm-600 ml-1">${product.unit}</span>` : ''}
             </div>
-            
-            <p class="text-gray-600 mb-6 leading-relaxed">${product.description}</p>
-            
-            <div class="flex gap-4">
-                 <div class="inline-flex items-center border border-gray-300 rounded-lg">
-                    <button class="px-3 py-2 hover:bg-gray-100 text-gray-600 font-bold">-</button>
-                    <input type="text" value="1" class="w-12 text-center border-none focus:ring-0 text-sm font-bold">
-                    <button class="px-3 py-2 hover:bg-gray-100 text-gray-600 font-bold">+</button>
+
+            <p class="text-warm-700 mb-6 leading-relaxed">${product.description}</p>
+
+            <div class="flex gap-3">
+                 <div class="inline-flex items-center border border-warm-300 rounded-lg">
+                    <button class="px-3 py-2 hover:bg-warm-100 text-warm-700 font-semibold">-</button>
+                    <input type="text" value="1" class="w-12 text-center border-none focus:ring-0 text-sm font-semibold">
+                    <button class="px-3 py-2 hover:bg-warm-100 text-warm-700 font-semibold">+</button>
                 </div>
-                <button onclick="addToCart(${product.id}); closeModal()" class="flex-1 bg-brand-green text-white py-2 rounded-lg font-bold hover:bg-brand-darkGreen transition shadow-lg shadow-green-200">
+                <button onclick="addToCart(${product.id}); closeModal()" class="flex-1 bg-brand-green text-white py-2 rounded-lg font-semibold hover:bg-brand-darkGreen transition">
                     Thêm vào giỏ
                 </button>
-                <button class="p-3 border border-gray-300 rounded-lg text-gray-500 hover:text-red-500 hover:border-red-500 transition">
+                <button class="p-3 border border-warm-300 rounded-lg text-warm-500 hover:text-red-500 hover:border-red-400 transition">
                     <i class="far fa-heart"></i>
                 </button>
             </div>

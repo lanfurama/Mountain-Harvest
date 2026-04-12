@@ -71,13 +71,13 @@ function renderNewsPagination() {
   const prevDisabled = newsPage <= 1 || newsLoading ? ' opacity-50 pointer-events-none' : '';
   const nextDisabled = newsPage >= newsTotalPages || newsLoading ? ' opacity-50 pointer-events-none' : '';
   
-  let html = '<a href="#" data-page="prev" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 transition' + prevDisabled + '"><i class="fas fa-chevron-left"></i></a>';
+  let html = '<a href="#" data-page="prev" class="inline-flex items-center justify-center w-9 h-9 border border-warm-300 rounded-lg hover:bg-warm-200 text-warm-700 transition' + prevDisabled + '"><i class="fas fa-chevron-left"></i></a>';
   for (let p = 1; p <= newsTotalPages; p++) {
-    const active = p === newsPage ? ' bg-brand-green text-white border-brand-green' : ' border-gray-300 hover:bg-gray-100 text-gray-700';
+    const active = p === newsPage ? ' bg-brand-green text-white border-brand-green' : ' border-warm-300 hover:bg-warm-200 text-warm-700';
     const disabled = newsLoading && p !== newsPage ? ' opacity-50 pointer-events-none' : '';
     html += '<a href="#" data-page="' + p + '" class="inline-flex items-center justify-center w-9 h-9 border rounded-lg transition' + active + disabled + '">' + p + '</a>';
   }
-  html += '<a href="#" data-page="next" class="inline-flex items-center justify-center w-9 h-9 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 transition' + nextDisabled + '"><i class="fas fa-chevron-right"></i></a>';
+  html += '<a href="#" data-page="next" class="inline-flex items-center justify-center w-9 h-9 border border-warm-300 rounded-lg hover:bg-warm-200 text-warm-700 transition' + nextDisabled + '"><i class="fas fa-chevron-right"></i></a>';
   el.innerHTML = html;
   el.querySelectorAll('a[data-page]').forEach(function (a) {
     a.addEventListener('click', function (e) {
@@ -121,14 +121,14 @@ function renderNews() {
       contentPreview = contentPreview.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
     return `
-    <article class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
-        <div class="h-48 overflow-hidden">
-            <img src="${news.image || ''}" alt="${titleEscaped}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)">
+    <article class="bg-warm-50 rounded-xl overflow-hidden shadow-ring hover:shadow-lift transition-all duration-300 border border-warm-200 group cursor-pointer" onclick="window.location='/news/${news.id}'">
+        <div class="h-52 overflow-hidden">
+            <img src="${news.image || ''}" alt="${titleEscaped}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" onerror="handleImageError(this)">
         </div>
-        <div class="p-6">
-            <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
-            <h3 class="font-bold text-lg mb-2"><a href="/news/${news.id}" class="hover:text-brand-green cursor-pointer block" style="text-decoration: none;">${titleEscaped}</a></h3>
-            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${contentPreview}</p>
+        <div class="p-5">
+            <span class="text-xs text-warm-500 mb-2 block font-medium"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
+            <h3 class="font-semibold text-base mb-2 text-warm-900 group-hover:text-brand-green transition leading-snug"><a href="/news/${news.id}" class="block" style="text-decoration: none; color: inherit;">${titleEscaped}</a></h3>
+            <p class="text-warm-600 text-sm line-clamp-3 leading-relaxed">${contentPreview}</p>
         </div>
     </article>
     `;
@@ -175,15 +175,15 @@ async function loadRelatedNews(newsId) {
         contentPreview = contentPreview.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
       return `
-        <article class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300" itemscope itemtype="https://schema.org/Article">
-          <a href="/news/${news.id}" class="block">
+        <article class="bg-warm-50 rounded-xl overflow-hidden shadow-ring hover:shadow-lift transition-all duration-300 border border-warm-200 group" itemscope itemtype="https://schema.org/Article">
+          <a href="/news/${news.id}" class="block" style="text-decoration:none; color:inherit;">
             <div class="h-48 overflow-hidden">
-              <img src="${news.image || ''}" alt="${titleEscaped}" class="w-full h-full object-cover transform hover:scale-105 transition duration-500" onerror="handleImageError(this)" itemprop="image">
+              <img src="${news.image || ''}" alt="${titleEscaped}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" onerror="handleImageError(this)" itemprop="image">
             </div>
-            <div class="p-6">
-              <span class="text-xs text-gray-400 mb-2 block"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
-              <h3 class="font-bold text-lg mb-2 hover:text-brand-green transition-colors" itemprop="headline">${titleEscaped}</h3>
-              <p class="text-gray-600 text-sm line-clamp-2" itemprop="description">${contentPreview}</p>
+            <div class="p-5">
+              <span class="text-xs text-warm-500 mb-2 block font-medium"><i class="far fa-calendar-alt mr-1"></i> ${news.date || ''}</span>
+              <h3 class="font-semibold text-base mb-2 text-warm-900 group-hover:text-brand-green transition-colors leading-snug" itemprop="headline">${titleEscaped}</h3>
+              <p class="text-warm-600 text-sm line-clamp-2 leading-relaxed" itemprop="description">${contentPreview}</p>
             </div>
           </a>
         </article>

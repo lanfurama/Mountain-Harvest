@@ -67,16 +67,16 @@ function renderCart() {
 
   if (cartItems) {
     if (cart.length === 0) {
-      cartItems.innerHTML = `<div class="text-center text-gray-500 py-4 text-sm">${translations[currentLang].cart.empty}</div>`;
+      cartItems.innerHTML = `<div class="text-center text-warm-500 py-4 text-sm">${translations[currentLang].cart.empty}</div>`;
     } else {
       cartItems.innerHTML = cart.map(item => `
             <div class="flex gap-2 group relative">
                 <img src="${item.image}" class="w-12 h-12 object-cover rounded">
                 <div class="flex-1">
                     <div class="text-xs font-bold truncate">${item.name}</div>
-                    <div class="text-xs text-gray-500">${item.quantity} x ${formatCurrency(item.price)}</div>
+                    <div class="text-xs text-warm-500">${item.quantity} x ${formatCurrency(item.price)}</div>
                 </div>
-                 <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 absolute right-0 top-1">
+                 <button onclick="removeFromCart(${item.id})" class="text-warm-400 hover:text-red-500 absolute right-0 top-1">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

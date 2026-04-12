@@ -149,8 +149,8 @@ function showToast(message) {
   }
 
   const toast = document.createElement('div');
-  toast.className = 'bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 transform translate-y-10 opacity-0 transition-all duration-300';
-  toast.innerHTML = `<i class="fas fa-check-circle text-brand-light"></i> <span>${message}</span>`;
+  toast.className = 'bg-warm-950 text-warm-50 px-6 py-3 rounded-xl shadow-lift flex items-center gap-3 transform translate-y-10 opacity-0 transition-all duration-300 border border-warm-800';
+  toast.innerHTML = `<i class="fas fa-check-circle text-brand-terracotta"></i> <span>${message}</span>`;
 
   toastContainer.appendChild(toast);
 
@@ -175,9 +175,9 @@ function initNavbarScroll() {
       const navbar = document.getElementById('navbar');
       if (!navbar) return;
       if (window.scrollY > 50) {
-        navbar.classList.add('shadow-lg');
+        navbar.classList.add('shadow-whisper');
       } else {
-        navbar.classList.remove('shadow-lg');
+        navbar.classList.remove('shadow-whisper');
       }
     });
     return;
@@ -187,9 +187,9 @@ function initNavbarScroll() {
     const navbar = Utils.$(Config.SELECTORS.NAVBAR.slice(1));
     if (!navbar) return;
     if (window.scrollY > Config.STICKY_NAVBAR_THRESHOLD) {
-      navbar.classList.add('shadow-lg');
+      navbar.classList.add('shadow-whisper');
     } else {
-      navbar.classList.remove('shadow-lg');
+      navbar.classList.remove('shadow-whisper');
     }
   }, Config.THROTTLE_DELAY);
   
@@ -274,17 +274,17 @@ async function loadSiteConfig() {
       let mobileHtml = '';
       if (categories.length > 0) {
         mobileHtml = categories.map((c, i) =>
-          `<a href="/?category=${encodeURIComponent(c)}" class="flex items-center gap-3 py-3 px-3 text-gray-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-medium group">
+          `<a href="/?category=${encodeURIComponent(c)}" class="flex items-center gap-3 py-3 px-3 text-warm-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-medium group">
             <div class="w-10 h-10 rounded-lg ${Config.CATEGORY_COLORS.bg[i] || 'bg-gray-100'} flex items-center justify-center group-hover:bg-brand-green transition">
-              <i class="fas ${Config.CATEGORY_ICONS[i] || 'fa-tag'} ${Config.CATEGORY_COLORS.icon[i] || 'text-gray-600'} group-hover:text-white transition"></i>
+              <i class="fas ${Config.CATEGORY_ICONS[i] || 'fa-tag'} ${Config.CATEGORY_COLORS.icon[i] || 'text-warm-600'} group-hover:text-white transition"></i>
             </div>
             <span class="flex-1">${Utils.escapeHtml(c)}</span>
-            <i class="fas fa-chevron-right text-gray-400 group-hover:text-brand-green transition"></i>
+            <i class="fas fa-chevron-right text-warm-400 group-hover:text-brand-green transition"></i>
           </a>`
         ).join('');
       } else {
         // Fallback if no categories loaded
-        mobileHtml = '<p class="text-gray-500 text-sm py-2 px-3">Đang tải danh mục...</p>';
+        mobileHtml = '<p class="text-warm-500 text-sm py-2 px-3">Đang tải danh mục...</p>';
       }
       mobileMenuContent.innerHTML = mobileHtml;
     }
@@ -299,14 +299,14 @@ async function loadSiteConfig() {
         if (container) {
           const newsSection = document.createElement('div');
           newsSection.id = 'mobile-menu-news';
-          newsSection.className = 'border-t-2 border-gray-100 pt-4 mt-4';
+          newsSection.className = 'border-t-2 border-warm-200 pt-4 mt-4';
           newsSection.innerHTML = `
-            <a href="/#news-section" class="flex items-center gap-3 py-3 px-3 text-gray-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-semibold group">
+            <a href="/#news-section" class="flex items-center gap-3 py-3 px-3 text-warm-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-semibold group">
               <div class="w-10 h-10 rounded-lg bg-brand-green/10 flex items-center justify-center group-hover:bg-brand-green transition">
                 <i class="fas fa-newspaper text-brand-green group-hover:text-white transition"></i>
               </div>
               <span>Tin tức</span>
-              <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-brand-green transition"></i>
+              <i class="fas fa-chevron-right text-warm-400 ml-auto group-hover:text-brand-green transition"></i>
             </a>
           `;
           container.appendChild(newsSection);
@@ -342,14 +342,14 @@ async function loadSiteConfig() {
       const colors = ['text-brand-green', 'text-brand-brown'];
       brochureList.innerHTML = brochures.map((b, i) => {
         const img = b.image || defaultImg;
-        const btnClass = i === 0 ? 'bg-white text-brand-green hover:bg-brand-green hover:text-white' : 'bg-white text-brand-brown hover:bg-brand-brown hover:text-white';
+        const btnClass = i === 0 ? 'bg-warm-50 text-brand-green hover:bg-brand-green hover:text-white' : 'bg-warm-50 text-brand-terracotta hover:bg-brand-terracotta hover:text-white';
         return `<div class="relative rounded-2xl overflow-hidden h-80 group cursor-pointer">
           <img src="${Utils.escapeHtml(img)}" alt="${Utils.escapeHtml(b.title || '')}" class="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="handleImageError(this)">
-          <div class="absolute inset-0 bg-black/40 hover:bg-black/30 transition"></div>
+          <div class="absolute inset-0 bg-warm-950/40 group-hover:bg-warm-950/30 transition"></div>
           <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-8">
-            <h3 class="text-3xl font-bold text-white mb-2 font-serif">${Utils.escapeHtml(b.title || '')}</h3>
-            <p class="text-gray-200 mb-6 max-w-sm">${Utils.escapeHtml(b.desc || '')}</p>
-            <a href="#shop" class="${btnClass} px-6 py-2 rounded-full font-bold transition">${Utils.escapeHtml(b.buttonText || 'Shop Now')}</a>
+            <h3 class="text-3xl font-medium text-white mb-2" style="font-family:'Playfair Display',Georgia,serif;">${Utils.escapeHtml(b.title || '')}</h3>
+            <p class="text-warm-300 mb-6 max-w-sm">${Utils.escapeHtml(b.desc || '')}</p>
+            <a href="#shop" class="${btnClass} px-6 py-2.5 rounded-xl font-semibold transition">${Utils.escapeHtml(b.buttonText || 'Shop Now')}</a>
           </div>
         </div>`;
       }).join('');
@@ -469,14 +469,14 @@ function ensureMobileMenuNews() {
     if (container) {
       const newsSection = document.createElement('div');
       newsSection.id = 'mobile-menu-news';
-      newsSection.className = 'border-t-2 border-gray-100 pt-4 mt-4';
+      newsSection.className = 'border-t-2 border-warm-200 pt-4 mt-4';
       newsSection.innerHTML = `
-        <a href="/#news-section" class="flex items-center gap-3 py-3 px-3 text-gray-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-semibold group">
+        <a href="/#news-section" class="flex items-center gap-3 py-3 px-3 text-warm-800 hover:text-brand-green hover:bg-brand-green/5 rounded-xl transition font-semibold group">
           <div class="w-10 h-10 rounded-lg bg-brand-green/10 flex items-center justify-center group-hover:bg-brand-green transition">
             <i class="fas fa-newspaper text-brand-green group-hover:text-white transition"></i>
           </div>
           <span>Tin tức</span>
-          <i class="fas fa-chevron-right text-gray-400 ml-auto group-hover:text-brand-green transition"></i>
+          <i class="fas fa-chevron-right text-warm-400 ml-auto group-hover:text-brand-green transition"></i>
         </a>
       `;
       container.appendChild(newsSection);
@@ -598,14 +598,14 @@ function initCheckoutSection() {
     
     const cart = Utils.getStorage(Config.STORAGE_KEYS.CART, []);
     if (cart.length === 0) {
-      summary.innerHTML = '<p class="text-gray-500 text-center py-4">Giỏ hàng trống. <a href="/#shop" class="text-brand-green hover:underline">Mua sắm ngay</a></p>';
+      summary.innerHTML = '<p class="text-warm-500 text-center py-4">Giỏ hàng trống. <a href="/#shop" class="text-brand-green hover:underline">Mua sắm ngay</a></p>';
       totalEl.textContent = Utils.formatCurrency(0);
       return;
     }
     
     const total = cart.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0);
     summary.innerHTML = cart.map(i =>
-      `<div class="flex justify-between items-center py-2 border-b border-gray-100">
+      `<div class="flex justify-between items-center py-2 border-b border-warm-200">
         <span class="font-medium">${Utils.escapeHtml(i.name || 'Sản phẩm')} x ${i.quantity || 1}</span>
         <span>${Utils.formatCurrency((i.price || 0) * (i.quantity || 1))}</span>
       </div>`
